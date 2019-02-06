@@ -1,0 +1,64 @@
+spring:
+  profiles:
+    active: dev
+  cache:
+    cache-names: js
+server:
+  port: 2907
+http:
+  proxyHost:
+  proxyPort:
+assets:
+  fileLocation: 'C:\Temp'
+logging:
+  file: log/privacy-proxy.log
+  level:
+    ROOT: INFO
+    de.tk.opensource.privacyproxy: INFO
+    de.tk.opensource.privacyproxy.controller: DEBUG
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+---
+spring:
+  profiles: dev
+assets:
+  fileLocation: 'tmp/privacy-proxy'
+example:
+  environment: dev
+  scripts:
+    endpoints: https://tags.example.com/dev/distro.zip
+    update: false
+    interval: '0 */2 * * * ?'
+  routing:
+    endpoint: https://tracking.example.de/dev/piwik.php
+logging:
+  level:
+    de.tk.opensource.privacyproxy.controller: DEBUG
+---
+spring:
+  profiles: qa
+assets:
+  fileLocation: 'tmp/privacy-proxy'
+example:
+  environment: qa
+  scripts:
+    endpoints: https://tags.example.com/qa/distro.zip
+    interval: '0 */2 * * * ?'
+  routing:
+    endpoint: https://tracking.example.de/qa/piwik.php
+---
+spring:
+  profiles: prod
+assets:
+  fileLocation: 'tmp/privacy-proxy'
+example:
+  environment: prod
+  scripts:
+    endpoints: https://tags.example.com/prod/distro.zip
+    interval: '0 */30 * * * ?'
+  routing:
+    endpoint: https://tracking.example.de/prod/piwik.php
