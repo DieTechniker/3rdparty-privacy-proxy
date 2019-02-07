@@ -17,6 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * This is an example implementation of the RoutingHandler.
+ * Please implement your own RoutingHandlers per provider and endpoint.
+ */
 @Controller
 @RequestMapping(value = UrlPattern.Contexts.PROXY)
 public class ExampleRoutingHandler extends RoutingHandler {

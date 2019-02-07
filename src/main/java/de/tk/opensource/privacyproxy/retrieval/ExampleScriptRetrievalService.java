@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * This is an example implementation of the AssetRetrievalService.
+ * Please implement your own DeliveryControllers per provider and file type.
+ * Dependent on what should be delivered, a specific FontRetrievalService could be another useful implementation.
+ */
 @ConditionalOnProperty("example.scripts.update")
 @Service
 public class ExampleScriptRetrievalService extends AssetRetrievalService {

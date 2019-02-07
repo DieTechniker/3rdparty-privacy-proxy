@@ -15,8 +15,8 @@ import java.nio.charset.Charset;
 
 /**
 * This is an example implementation of the AssetDeliveryController
-* Please implement your own DeliveryControllers per file type. Dependant on what should be delivered, a specific
-* FontDeliveryController could be another useful delivery.
+* Please implement your own DeliveryControllers per provider and file type.
+ * Dependent on what should be delivered, a specific FontDeliveryController could be another useful delivery.
 */
 @Controller
 public class ExampleScriptDeliveryController extends AssetDeliveryController {

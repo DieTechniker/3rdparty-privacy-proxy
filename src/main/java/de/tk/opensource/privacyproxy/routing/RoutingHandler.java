@@ -24,7 +24,7 @@ import java.util.*;
 * This is fun code. It will allow you to take back control over information being sent to 3rd Party Providers.
 * So most of those 3PP will not like it ;-)
 * The idea is to allow Whitelisting and Blacklisting. The request to the 3PP Server will come from this service / server. 
-* No Header and cookie information will be available by default and have to be whitelisted.
+* No Header and cookie information will be available by default and has to be whitelisted.
 * If you know about certain parameters you need to forbid or filtered, use blacklisting.
 * If the service delivers a response, this also has to be kind of whitelisted. Cookies will be set by this service and thus will always be 1st party!
 *
