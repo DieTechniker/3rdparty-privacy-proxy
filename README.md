@@ -1,6 +1,6 @@
 # TK 3rd Party Privacy Proxy
 
-Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider you use without losing any functionality on your end. Further more this privacy proxy delivers you the ultimate knowledge about what information are being transfered to any 3rd Party Provider as well as independece from their servers.
+Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider you use without losing any functionality on your end. Further more this privacy proxy delivers you the ultimate knowledge about what information are being transferred to any 3rd Party Provider as well as independence from their servers.
 
 ## Getting Started
 
@@ -9,6 +9,7 @@ This software is built with JAVA / Spring Boot. You do require a fully working J
 To get things up and running there are two parts to do
 * Configure the ```application.yml```
 * Implement the required **Delivery**, **Retrieval** or **Routing** Proxy using the abstract classes to get and deliver assets or route information out. You can and should implement as many Proxies / Controllers as you require. Read the inline code documentation for an explaination what is done where.
+* Have a look at the sample implementation that exists for every abstract class before you start coding your own services.
 
 ### Prerequisites
 
@@ -43,11 +44,11 @@ java -jar -Dspring.profiles.active=dev target/3rdpart-privacy-proxy.jar
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+Add additional notes about how to deploy this on a live system ...
 
 ## Configuration
 
-All configuration is done within the ```application.yml``` config file. This is where you will place your assets to download, configure local directory pathes as well as the dev, prod and whatever profiles you require. Those values can then be used within your implementations.
+All configuration is done within the ```application.yml``` config file. This is where you will place your assets to download by listing remote endpoints and target filenames, configure local directory paths as well as the dev, prod and whatever profiles you require. Those values can then be used within your implementations.
 Check out the supplied example config and implementations to get an idea what can be configured. The configuration is based on yaml.
 
 ## Built With
