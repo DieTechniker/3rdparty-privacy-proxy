@@ -1,4 +1,4 @@
-/*--- (C) 1999-2017 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.routing;
 
@@ -20,6 +20,19 @@ import java.net.Proxy;
 import java.net.URL;
 import java.util.*;
 
+/**
+* This is fun code. It will allow you to take back control over information being sent to 3rd Party Providers.
+* So most of those 3PP will not like it ;-)
+* The idea is to allow Whitelisting and Blacklisting. The request to the 3PP Server will come from this service / server. 
+* No Header and cookie information will be available by default and have to be whitelisted.
+* If you know about certain parameters you need to forbid or filtered, use blacklisting.
+* If the service delivers a response, this also has to be kind of whitelisted. Cookies will be set by this service and thus will always be 1st party!
+*
+* You have to implement your own RoutingHandler per provider. E.g. you could write a RoutingProvider to proxy traffic to an external Matomo instance.
+* REQUIREMENT: 
+* You have to be able to configure a 3PP JS to talk to this service URL instead of their server directly. 
+* If they don't allow this without patching their code by yourself, look for another service provider. Therer is no technical requirement for not allowing this.
+*/
 public abstract class RoutingHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RoutingHandler.class);
