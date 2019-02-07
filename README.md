@@ -8,7 +8,7 @@ This software is built with JAVA / Spring Boot. You do require a fully working J
 
 To get things up and running there are two parts to do
 * Configure the ```application.yml```
-* Implement a **Delivery**, **Retrieval** or **Routing** Proxy using the abstract classes to get and deliver assets or route information out
+* Implement the required **Delivery**, **Retrieval** or **Routing** Proxy using the abstract classes to get and deliver assets or route information out. You can and should implement as many Proxies / Controllers as you require. Read the inline code documentation for an explaination what is done where.
 
 ### Prerequisites
 
@@ -34,10 +34,21 @@ To simply **run the application locally** to test, develop or check it out, run
 ```
 mvn spring-boot:run 
 ```
+The configuration relies on **profiles** to determine which configuration block should be used. To start the application with a specific profile ("dev" in this example) use
+```
+mvn spring-boot:run -Drun.profiles=dev
+or
+java -jar -Dspring.profiles.active=dev target/3rdpart-privacy-proxy.jar
+```
 
 ## Deployment
 
 Add additional notes about how to deploy this on a live system
+
+## Configuration
+
+All configuration is done within the ```application.yml``` config file. This is where you will place your assets to download, configure local directory pathes as well as the dev, prod and whatever profiles you require. Those values can then be used within your implementations.
+Check out the supplied example config and implementations to get an idea what can be configured. The configuration is based on yaml.
 
 ## Built With
 
