@@ -1,6 +1,6 @@
 spring:
   cache:
-    cache-names: js
+    cache-names: js, ttf
 server:
   port: 2907
 logging:
@@ -26,6 +26,15 @@ spring:
   profiles: dev
 assets:
   fileLocation: 'C:\SPU\Temp'
+google:
+  fonts:
+    endpoints:
+      - remoteUrl: 'https://fonts.google.com/download?family=Roboto'
+        filename: 'roboto.zip'
+      - remoteUrl: 'https://fonts.google.com/download?family=Open+Sans'
+        filename: 'open-sans.zip'
+    update: true
+    interval: '0 */2 * * * ?'
 example:
   scripts:
     endpoints:
