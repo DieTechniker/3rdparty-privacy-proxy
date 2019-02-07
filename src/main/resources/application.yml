@@ -8,8 +8,6 @@ server:
 http:
   proxyHost:
   proxyPort:
-assets:
-  fileLocation: 'C:\Temp'
 logging:
   file: log/privacy-proxy.log
   level:
@@ -26,39 +24,45 @@ management:
 spring:
   profiles: dev
 assets:
-  fileLocation: 'tmp/privacy-proxy'
+  fileLocation: 'C:\SPU\Temp'
 example:
-  environment: dev
   scripts:
-    endpoints: https://tags.example.com/dev/distro.zip
-    update: false
+    endpoints:
+      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.js'
+        filename: 'jquery.js'
+    update: true
     interval: '0 */2 * * * ?'
   routing:
-    endpoint: https://tracking.example.de/dev/piwik.php
+    endpoint: 'https://tracking.example.de/dev/piwik.php'
+    environment: dev
 logging:
   level:
-    de.tk.opensource.privacyproxy.controller: DEBUG
+    de.tk.opensource.privacyproxy: DEBUG
 ---
 spring:
   profiles: qa
 assets:
   fileLocation: 'tmp/privacy-proxy'
 example:
-  environment: qa
   scripts:
-    endpoints: https://tags.example.com/qa/distro.zip
+    endpoints:
+      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.min.js'
+        filename: 'jquery.js'
     interval: '0 */2 * * * ?'
   routing:
     endpoint: https://tracking.example.de/qa/piwik.php
+    environment: qa
 ---
 spring:
   profiles: prod
 assets:
   fileLocation: 'tmp/privacy-proxy'
 example:
-  environment: prod
   scripts:
-    endpoints: https://tags.example.com/prod/distro.zip
+    endpoints:
+      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.min.js'
+        filename: 'jquery.js'
     interval: '0 */30 * * * ?'
   routing:
-    endpoint: https://tracking.example.de/prod/piwik.php
+    endpoint: 'https://tracking.example.de/prod/piwik.php'
+    environment: prod

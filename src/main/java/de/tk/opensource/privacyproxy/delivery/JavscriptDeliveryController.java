@@ -14,24 +14,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.nio.charset.Charset;
 
 /**
-* This is an example implementation of the AssetDeliveryController
-* Please implement your own DeliveryControllers per provider and file type.
- * Dependent on what should be delivered, a specific FontDeliveryController could be another useful delivery.
+* This is an implementation of the AssetDeliveryController to deliver JavsScript files.
 */
 @Controller
-public class ExampleScriptDeliveryController extends AssetDeliveryController {
+public class JavscriptDeliveryController extends AssetDeliveryController {
 
 	/**
-	* Sets up Cachegroups as well as the URL mapping under which this content should be accessible.
-	* Make sure to set the both following annotations properly to your usecase.
-	* Also ensure that the URL mapping is unique. Add a slug like /js/{provider...}/{script...} or /fonts/....
+	* Sets up a cachegroup as well as the URL mapping under which this content should be accessible.
 	*/
 	@Cacheable(
 		cacheNames = "js",
 		key = "#provider + #script"
 	)
 	@GetMapping(
-		value = "/{provider:[a-zA-Z\\-]+$}/{script:[a-zA-Z0-9\\.\\-\\_]+$}",
+		value = "/{provider:[a-zA-Z\\-]+$}/{script:[a-zA-Z0-9\\.\\-\\_]+\\.js$}",
 		produces = "application/javascript"
 	)
 	public ResponseEntity getScript(

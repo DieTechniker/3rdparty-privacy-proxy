@@ -9,9 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 
@@ -46,12 +44,12 @@ public abstract class AssetDeliveryController {
 	* @param asset Identifier of the asset to deliver
 	*/
 	protected ResponseEntity getAssetInternal(String provider, String asset) {
-		String result = "";
+		byte[] result = null;
 		Resource[] resources = getResources(provider + "/" + asset);
 		if (resources.length > 0) {
 			Resource file = resources[0];
 			try(InputStream stream = file.getInputStream()) {
-				result = StreamUtils.copyToString(stream, CHARSET);
+				result = StreamUtils.copyToByteArray(stream);
 			} catch (IOException e) {
 				LOGGER.error(
 					"An error occured while working on file {}. Exception: {}",
@@ -63,20 +61,21 @@ public abstract class AssetDeliveryController {
 
 		/**
 		* We do not want to allow any caching of these resources for now.
-		* The expires header is not necissary but just to not deliver human-confusing cache directives
+		* The expires header is not necessary but just to not deliver human-confusing cache directives
 		* TODO: Allow caching of the assets while they are not being updated (cache time = cron interval from config)
 		*/
 		HttpHeaders header = new HttpHeaders();
-		header.add(HttpHeaders.CACHE_CONTROL, "no-cache");
-		header.add(HttpHeaders.EXPIRES, "0");
+		header.setCacheControl("no-cache");
+		header.setExpires(0L);
+		header.setContentDisposition(ContentDisposition.builder("inline").filename(asset).build());
 
-		if (result.length() > 0) {
+		if (result != null) {
 
 			// Log the request to this asset somewhere. Might be useful for usage statistics or other internal statistics
-			trackAssetRequest(provider + "/" + asset, result.length());
+			trackAssetRequest(provider + "/" + asset, result.length);
 
 			// Return the asset file itself
-			return ResponseEntity.status(HttpStatus.OK).headers(header).body(result);
+			return ResponseEntity.ok().headers(header).body(result);
 		}
 		// Return 404 if no asset was found to deliver
 		return ResponseEntity.notFound().build();
@@ -104,7 +103,7 @@ public abstract class AssetDeliveryController {
 	 * @param responseSize size of reponse in size
 	 */
 	protected void trackAssetRequest(String assetUrl, long responseSize) {
-		LOGGER.debug("Deliver 3rd party asset. Url={}, bytes sent={]", assetUrl, responseSize);
+		LOGGER.debug("Deliver 3rd party asset. Url={}, bytes sent={}", assetUrl, responseSize);
 	}
 
 }
