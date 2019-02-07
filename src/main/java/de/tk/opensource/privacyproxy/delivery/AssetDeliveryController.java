@@ -1,4 +1,4 @@
-/*--- (C) 1999-2017 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.delivery;
 
@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+/**
+* This is the AssetDeliveryController abstract implementation.
+* It will search for a given asset name within a provider and delivers a file to the request.
+* Build your own file type specific delivery controller to deliver JS, CSS, fonts, etc.
+*/
 @Controller
 public abstract class AssetDeliveryController {
 
@@ -28,9 +33,18 @@ public abstract class AssetDeliveryController {
 	@Autowired
 	private ResourceLoader resourceLoader;
 
+	/**
+	* Configuration where to look for the files on the disk (root folder)
+	*/
 	@Value("${assets.fileLocation}")
 	private String location;
 
+	/**
+	* Tries to fetch the requested file from the file system. 
+	* It wlll look in a folder named like the provider for the requested asset.
+	* @param provider Identifier of the provider under which we will look for the file
+	* @param asset Identifier of the asset to deliver
+	*/
 	protected ResponseEntity getAssetInternal(String provider, String asset) {
 		String result = "";
 		Resource[] resources = getResources(provider + "/" + asset);
@@ -47,20 +61,31 @@ public abstract class AssetDeliveryController {
 			}
 		}
 
+		/**
+		* We do not want to allow any caching of these resources for now.
+		* The expires header is not necissary but just to not deliver human-confusing cache directives
+		* TODO: Allow caching of the assets while they are not being updated (cache time = cron interval from config)
+		*/
 		HttpHeaders header = new HttpHeaders();
 		header.add(HttpHeaders.CACHE_CONTROL, "no-cache");
+		header.add(HttpHeaders.EXPIRES, "0");
 
 		if (result.length() > 0) {
 
-			// reporting
+			// Log the request to this asset somewhere. Might be useful for usage statistics or other internal statistics
 			trackAssetRequest(provider + "/" + asset, result.length());
 
-			// asset response
+			// Return the asset file itself
 			return ResponseEntity.status(HttpStatus.OK).headers(header).body(result);
 		}
+		// Return 404 if no asset was found to deliver
 		return ResponseEntity.notFound().build();
 	}
 
+	/**
+	* Get the requested file from the disk
+	* @param fileName the requested filename
+	*/
 	private Resource[] getResources(String fileName) {
 		String path = "file:" + location + "/" + fileName;
 		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
@@ -83,5 +108,3 @@ public abstract class AssetDeliveryController {
 	}
 
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
