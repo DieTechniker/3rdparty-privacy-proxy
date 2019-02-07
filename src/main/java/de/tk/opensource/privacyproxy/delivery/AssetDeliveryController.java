@@ -13,9 +13,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 
 /**
 * This is the AssetDeliveryController abstract implementation.
@@ -26,7 +26,6 @@ import java.nio.charset.Charset;
 public abstract class AssetDeliveryController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AssetDeliveryController.class);
-	private static final Charset CHARSET = Charset.forName("UTF-8");
 
 	@Autowired
 	private ResourceLoader resourceLoader;
@@ -83,10 +82,10 @@ public abstract class AssetDeliveryController {
 
 	/**
 	* Get the requested file from the disk
-	* @param fileName the requested filename
+	* @param filename the requested filename
 	*/
-	private Resource[] getResources(String fileName) {
-		String path = "file:" + location + "/" + fileName;
+	private Resource[] getResources(String filename) {
+		String path = "file:" + location + File.separator + filename;
 		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(resourceLoader);
 		Resource[] resources = new Resource[] {};
 		try {

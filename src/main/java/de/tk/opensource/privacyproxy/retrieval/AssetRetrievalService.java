@@ -47,7 +47,7 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	*/
 	public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
 		boolean directoryAvailable;
-		File directory = new File(location + "/" + provider);
+		File directory = new File(location + File.separator + provider);
 		if (directory.exists()) {
 			directoryAvailable = true;
 		} else {
@@ -58,35 +58,39 @@ public abstract class AssetRetrievalService implements InitializingBean {
 				LOGGER.info("Updating the {} assets", provider);
 				for (RetrievalEndpoint endpoint : endpoints) {
 					// Access the endpoint with a cachebuster to prevent network middleware (corporate proxies) to cache the response
-					URL url = new URL(endpoint.getRemoteUrlWithCacheBuster().toString());
+					URL url = new URL(endpoint.getRemoteUrlWithCacheBuster());
 					URLConnection connection = url.openConnection(proxy);
-					// If the endpoint delivers ZIP, extract it.
-					if (endpoint.getFilename().endsWith(".zip")) {
-						try(
-							ZipInputStream inputStream =
-								new ZipInputStream(connection.getInputStream())
 
-						) {
-							ZipEntry zipEntry = inputStream.getNextEntry();
-							while (zipEntry != null) {
-								String fileName = zipEntry.getName();
-								writeFile(inputStream, provider, fileName);
-								zipEntry = inputStream.getNextEntry();
-							}
-							inputStream.closeEntry();
-						}
-					} else {
-						try(InputStream in = connection.getInputStream()) {
-							writeFile(in, provider, endpoint.getFilename());
-						}
-					}
+					// retrieve remote asset(s) and extract if necessary
+					retrieveAsset(connection, provider, endpoint.getFilename());
 				}
 				LOGGER.info("Done updating the {} assets", provider);
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(), e);
 			}
 		} else {
-			LOGGER.error("unable to create directory %s", location);
+			LOGGER.error("unable to create directory {}", location);
+		}
+	}
+
+	/**
+	 * Retrieve asset from connection and extract if it is a ZIP file.
+	 */
+	private void retrieveAsset(URLConnection connection, String provider, String filename) throws IOException {
+		// If the endpoint delivers ZIP, extract it.
+		if (filename.endsWith(".zip")) {
+			try (ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream())) {
+				ZipEntry zipEntry = zipInputStream.getNextEntry();
+				while (zipEntry != null) {
+					writeFile(zipInputStream, provider, zipEntry.getName());
+					zipEntry = zipInputStream.getNextEntry();
+				}
+				zipInputStream.closeEntry();
+			}
+		} else {
+			try (InputStream in = connection.getInputStream()) {
+				writeFile(in, provider, filename);
+			}
 		}
 	}
 
@@ -100,19 +104,19 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	/**
 	* Writes the retrieved files to disk
 	*/
-	public void writeFile(InputStream inputStream, String provider, String fileName) {
+	private void writeFile(InputStream inputStream, String provider, String filename) {
 		byte[] buffer = new byte[1024];
 		try(
-			FileOutputStream fos = new FileOutputStream(location + "/" + provider + "/" + fileName)
+			FileOutputStream fos = new FileOutputStream(location + "/" + provider + "/" + filename)
 		) {
 			int len;
 			while ((len = inputStream.read(buffer)) > 0) {
 				fos.write(buffer, 0, len);
 			}
 		} catch (FileNotFoundException f) {
-			LOGGER.error(String.format("unable to write file %s", fileName), f);
+			LOGGER.error(String.format("unable to write file %s", filename), f);
 		} catch (IOException i) {
-			LOGGER.error(String.format("unable to write file %s", fileName), i);
+			LOGGER.error(String.format("unable to write file %s", filename), i);
 		}
 	}
 
