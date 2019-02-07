@@ -2,6 +2,7 @@
 
 package de.tk.opensource.privacyproxy.retrieval;
 
+import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -17,9 +18,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
-* This class downloads files from a remote host and stores them grouped by "provider" on the file System.
+* This class downloads files from a remote host and stores them grouped by "provider" on the file system.
 * You can download any arbitrary file. If the endpoint is a ZIP it will be extracted and its content will be stored.
-* Please implement your own Service per provider. See the ExampleRetrievalScriptService for an example.
+* Please implement your own Service per provider. See the ExampleScriptRetrievalService for an example.
 * The regular fetch is done by the Spring Boot cron system which is setup in your provider retrieval class.
 *
 * All configs for the retrieval and your providers should be done in the application.yml within the Application
@@ -44,7 +45,7 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	* The endpoints can be configured as a single URL or a list of comma separated URLs. Put them into the application.yml
 	* If the endpoint delivers a ZIP file it will be extracted
 	*/
-	public void updateAssetsInternal(String provider, List<String> endpoints) {
+	public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
 		boolean directoryAvailable;
 		File directory = new File(location + "/" + provider);
 		if (directory.exists()) {
@@ -55,14 +56,12 @@ public abstract class AssetRetrievalService implements InitializingBean {
 		if (directoryAvailable) {
 			try {
 				LOGGER.info("Updating the {} assets", provider);
-				for (String endpoint : endpoints) {
+				for (RetrievalEndpoint endpoint : endpoints) {
 					// Access the endpoint with a cachebuster to prevent network middleware (corporate proxies) to cache the response
-					URL url = new URL(endpoint + "?_=" + System.currentTimeMillis());
+					URL url = new URL(endpoint.getRemoteUrlWithCacheBuster().toString());
 					URLConnection connection = url.openConnection(proxy);
 					// If the endpoint delivers ZIP, extract it.
-					// TODO: Allow configuration per endpoint to force extract. 
-					// The filename might not be enough (Google Fonts Downloads e.g. do not resolve here)
-					if (endpoint.endsWith(".zip")) {
+					if (endpoint.getFilename().endsWith(".zip")) {
 						try(
 							ZipInputStream inputStream =
 								new ZipInputStream(connection.getInputStream())
@@ -78,7 +77,7 @@ public abstract class AssetRetrievalService implements InitializingBean {
 						}
 					} else {
 						try(InputStream in = connection.getInputStream()) {
-							writeFile(in, provider, endpoint.substring(endpoint.lastIndexOf("/")));
+							writeFile(in, provider, endpoint.getFilename());
 						}
 					}
 				}

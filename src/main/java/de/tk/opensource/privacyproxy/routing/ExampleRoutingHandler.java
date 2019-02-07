@@ -28,7 +28,7 @@ public class ExampleRoutingHandler extends RoutingHandler {
 	@Value("${example.routing.endpoint}")
 	private String routingEndpoint;
 
-	@Value("${example.environment}")
+	@Value("${example.routing.environment}")
 	private String environment;
 
 	@PostMapping(value = UrlPattern.Provider.EXAMPLE)

@@ -3,6 +3,7 @@
 package de.tk.opensource.privacyproxy.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import java.net.Proxy;
 @Configuration
 @EnableCaching
 @EnableScheduling
+@EnableConfigurationProperties
 public class PrivacyProxyConfig {
 
 	@Bean
