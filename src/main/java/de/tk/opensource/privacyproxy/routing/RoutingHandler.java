@@ -228,7 +228,7 @@ public abstract class RoutingHandler {
 	 * @param responseSize size of reponse in size
 	 */
 	protected void trackRoutingRequest(String routingEndpoint, long requestSize, long responseSize) {
-		LOGGER.debug("Route request to 3rd party. Url={}, bytes sent={], bytes received={}", routingEndpoint, requestSize, responseSize);
+		LOGGER.debug("Route request to 3rd party. Url={}, bytes sent={}, bytes received={}", routingEndpoint, requestSize, responseSize);
 	}
 
 	/**
