@@ -3,9 +3,6 @@ spring:
     cache-names: js
 server:
   port: 2907
-http:
-  proxyHost:
-  proxyPort:
 logging:
   file: log/privacy-proxy.log
   level:
@@ -18,6 +15,12 @@ management:
   endpoint:
     health:
       enabled: true
+---
+spring:
+  profiles: tk-proxy
+http:
+  proxyHost: proxy.tk-inline.de
+  proxyPort: 8080
 ---
 spring:
   profiles: dev
