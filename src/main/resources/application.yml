@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: dev
   cache:
     cache-names: js
 server:
