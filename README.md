@@ -60,7 +60,7 @@ Check out the supplied example config and implementations to get an idea what ca
 
 * **Artur Baron** - *Writing this amazing peace of code*
 * **Benjamin Stark** - *Making the open source version ready to appear right here*
-* **Jan Thiel** - *Developing the idea behind this project and writing the docu*
+* **Jan Thiel** - *Developing the idea behind this project and writing the docs*
 
 ## License
 
