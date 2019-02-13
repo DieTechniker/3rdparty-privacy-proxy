@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>de.tk.opensource.privacyproxy</groupId>
+    <groupId>de.tk.opensource</groupId>
     <artifactId>3rdparty-privacy-proxy</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging>
@@ -80,7 +80,7 @@
     </properties>
 
     <build>
-        <finalName>3rd-party-privacy-proxy</finalName>
+        <finalName>3rdparty-privacy-proxy</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -93,6 +93,9 @@
                         <goals>
                             <goal>repackage</goal>
                         </goals>
+                        <configuration>
+                            <classifier>springboot</classifier>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
