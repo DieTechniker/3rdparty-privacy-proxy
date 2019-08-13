@@ -14,6 +14,77 @@
         <version>2.1.2.RELEASE</version>
     </parent>
 
+    <description>
+        TK 3rd Party Privacy Proxy.
+        Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests
+        back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider
+        you use without losing any functionality on your end. Further more this privacy proxy delivers you the
+        ultimate knowledge about what information are being transferred to any 3rd Party Provider
+        as well as independence from their servers.
+    </description>
+    <developers>
+        <developer>
+            <id>JanThiel</id>
+            <name>Jan Thiel</name>
+            <email>jan.thiel@tk.de</email>
+            <organization>Techniker Krankenkasse</organization>
+            <organizationUrl>https://www.tk.de</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/Berlin</timezone>
+        </developer>
+        <developer>
+            <id>bstark</id>
+            <name>Benjamin Stark</name>
+            <email>benjamin.stark@tk.de</email>
+            <organization>Techniker Krankenkasse</organization>
+            <organizationUrl>https://www.tk.de</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/Berlin</timezone>
+        </developer>
+        <developer>
+            <id>kassimhoelting</id>
+            <name>Kassim Hoelting</name>
+            <email>kassim.hoelting@tk.de</email>
+            <organization>Techniker Krankenkasse</organization>
+            <organizationUrl>https://www.tk.de</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/Berlin</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/DieTechniker/3rdparty-privacy-proxy.git</connection>
+        <developerConnection>scm:git:git@github.com:DieTechniker/3rdparty-privacy-proxy.git</developerConnection>
+        <url>https://github.com/DieTechniker/3rdparty-privacy-proxy</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>sonatype-nexus</id>
+            <name>Sonatype Nexus snapshot repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>sonatype-nexus</id>
+            <name>Sonatype Nexus release repository</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+    </distributionManagement>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License Version 3.0</name>
+            <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -77,6 +148,8 @@
 
     <properties>
         <java.version>1.8</java.version>
+        <maven.gpg.plugin>1.6</maven.gpg.plugin>
+        <maven.sonatype.nexus.plugin>1.6.8</maven.sonatype.nexus.plugin>
     </properties>
 
     <build>
@@ -102,4 +175,48 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven.gpg.plugin}</version>
+                        <configuration>
+                            <passphrase>${gpg.passphrase}</passphrase>
+                            <keyname>${gpg.keyname}</keyname>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>${maven.sonatype.nexus.plugin}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>sonatype-nexus</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
