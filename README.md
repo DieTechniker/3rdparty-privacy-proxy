@@ -1,4 +1,4 @@
-# TK 3rd Party Privacy Proxy
+# TK 3rd Party Privacy Proxy [![Build Status](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy)
 
 Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider you use without losing any functionality on your end. Further more this privacy proxy delivers you the ultimate knowledge about what information are being transferred to any 3rd Party Provider as well as independence from their servers.
 
