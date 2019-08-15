@@ -1,4 +1,4 @@
-/*--- (C) 1999-2017 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.delivery;
 
@@ -9,14 +9,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 /**
-* This is an implementation of the AssetDeliveryController to deliver truetype fonts.
-*/
+ * This is an implementation of the AssetDeliveryController to deliver truetype fonts.
+ */
 @Controller
 public class TruetypeFontDeliveryController extends AssetDeliveryController {
 
 	/**
-	* Sets up cachegroup as well as the URL mapping under which this content should be accessible.
-	*/
+	 * Sets up cachegroup as well as the URL mapping under which this content should be accessible.
+	 */
 	@Cacheable(
 		cacheNames = "ttf",
 		key = "#provider + #font"
