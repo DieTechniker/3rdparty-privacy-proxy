@@ -2,49 +2,49 @@
 
 package de.tk.opensource.privacyproxy.retrieval;
 
-import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-
 import java.io.*;
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
+import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
+import de.tk.opensource.privacyproxy.util.ProxyHelper;
+
 /**
-* This class downloads files from a remote host and stores them grouped by "provider" on the file system.
-* You can download any arbitrary file. If the endpoint is a ZIP it will be extracted and its content will be stored.
-* Please implement your own Service per provider. See the ExampleScriptRetrievalService for an example.
-* The regular fetch is done by the Spring Boot cron system which is setup in your provider retrieval class.
-*
-* All configs for the retrieval and your providers should be done in the application.yml within the Application
-*/
+ * This class downloads files from a remote host and stores them grouped by "provider" on the file
+ * system. You can download any arbitrary file. If the endpoint is a ZIP it will be extracted and
+ * its content will be stored. Please implement your own Service per provider. The regular fetch is
+ * done by the Spring Boot cron system which is setup in your provider retrieval class. All configs
+ * for the retrieval and your providers should be done in the application.yml within the Application
+ */
 public abstract class AssetRetrievalService implements InitializingBean {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AssetRetrievalService.class);
 
 	/**
-	* Configure where the files will be stored on the file system.
-	*/
+	 * Configure where the files will be stored on the file system.
+	 */
 	@Value("${assets.fileLocation}")
 	private String location;
 
 	@Autowired
-	private Proxy proxy;
+	private ProxyHelper proxyHelper;
 
 	/**
-	* Method to fetch the assets defined in the proper implementation class. You need to implement one AssetRetrievalService class per Provider.
-	* A provider is a logical group which should represent the source of the files.
-	* e.g. a "google-fonts" provider would be a useful case
-	* The endpoints can be configured as a single URL or a list of comma separated URLs. Put them into the application.yml
-	* If the endpoint delivers a ZIP file it will be extracted
-	*/
+	 * Method to fetch the assets defined in the proper implementation class. You need to implement
+	 * one AssetRetrievalService class per Provider. A provider is a logical group which should
+	 * represent the source of the files. e.g. a "google-fonts" provider would be a useful case The
+	 * endpoints can be configured as a single URL or a list of comma separated URLs. Put them into
+	 * the application.yml If the endpoint delivers a ZIP file it will be extracted
+	 */
 	public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
 		boolean directoryAvailable;
 		File directory = new File(location + File.separator + provider);
@@ -57,9 +57,11 @@ public abstract class AssetRetrievalService implements InitializingBean {
 			try {
 				LOGGER.info("Updating the {} assets", provider);
 				for (RetrievalEndpoint endpoint : endpoints) {
+
 					// Access the endpoint with a cachebuster to prevent network middleware (corporate proxies) to cache the response
 					URL url = new URL(endpoint.getRemoteUrlWithCacheBuster());
-					URLConnection connection = url.openConnection(proxy);
+					URLConnection connection = url.openConnection(proxyHelper.selectProxy(url));
+					connection.setRequestProperty("User-Agent", "3rd Party Privacy Proxy");
 
 					// retrieve remote asset(s) and extract if necessary
 					retrieveAsset(connection, provider, endpoint.getFilename());
@@ -76,10 +78,13 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	/**
 	 * Retrieve asset from connection and extract if it is a ZIP file.
 	 */
-	private void retrieveAsset(URLConnection connection, String provider, String filename) throws IOException {
+	private void retrieveAsset(URLConnection connection, String provider, String filename)
+		throws IOException
+	{
+
 		// If the endpoint delivers ZIP, extract it.
 		if (filename.endsWith(".zip")) {
-			try (ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream())) {
+			try(ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream())) {
 				ZipEntry zipEntry = zipInputStream.getNextEntry();
 				while (zipEntry != null) {
 					writeFile(zipInputStream, provider, zipEntry.getName());
@@ -88,7 +93,7 @@ public abstract class AssetRetrievalService implements InitializingBean {
 				zipInputStream.closeEntry();
 			}
 		} else {
-			try (InputStream in = connection.getInputStream()) {
+			try(InputStream in = connection.getInputStream()) {
 				writeFile(in, provider, filename);
 			}
 		}
@@ -102,8 +107,8 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	}
 
 	/**
-	* Writes the retrieved files to disk
-	*/
+	 * Writes the retrieved files to disk
+	 */
 	private void writeFile(InputStream inputStream, String provider, String filename) {
 		byte[] buffer = new byte[1024];
 		try(
@@ -121,3 +126,5 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	}
 
 }
+
+/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
