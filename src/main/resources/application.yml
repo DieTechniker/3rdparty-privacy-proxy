@@ -4,7 +4,7 @@ spring:
 server:
   port: 2907
 logging:
-  file: log/3rd-party-privacy-proxy.log
+  file: log/3rdparty-privacy-proxy.log
   level:
     ROOT: INFO
     de.tk.opensource.privacyproxy: INFO
@@ -26,7 +26,7 @@ http:
 spring:
   profiles: dev
 assets:
-  fileLocation: 'C:\SPU\tmp\3rd-party-privacy-proxy'
+  fileLocation: 'C:\SPU\tmp\3rdparty-privacy-proxy'
 google:
   fonts:
     endpoints:
@@ -43,9 +43,9 @@ logging:
 spring:
   profiles: qa
 assets:
-  fileLocation: 'tmp/3rd-party-privacy-proxy'
+  fileLocation: 'tmp/3rdparty-privacy-proxy'
 ---
 spring:
   profiles: prod
 assets:
-  fileLocation: 'tmp/3rd-party-privacy-proxy'
+  fileLocation: 'tmp/3rdparty-privacy-proxy'
