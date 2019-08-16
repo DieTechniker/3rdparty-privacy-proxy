@@ -2,9 +2,9 @@
 
 package de.tk.opensource.privacyproxy.config;
 
-public enum CookieNameMatchType {
+public enum ProviderRequestMethod {
 
-	PREFIX, FULL
+	POST, GET
 }
 
 /*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
