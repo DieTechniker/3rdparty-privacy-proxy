@@ -16,10 +16,10 @@
 
     <description>
         TK 3rd Party Privacy Proxy.
-        Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests
+        Delivers functionality to securely fetch and provide 3rd Party resources as well as proxying requests
         back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider
         you use without losing any functionality on your end. Further more this privacy proxy delivers you the
-        ultimate knowledge about what information are being transferred to any 3rd Party Provider
+        ultimate knowledge about what information is being transferred to any 3rd Party Provider
         as well as independence from their servers.
     </description>
     <developers>
