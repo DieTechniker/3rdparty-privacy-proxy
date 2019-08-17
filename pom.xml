@@ -5,7 +5,7 @@
 
     <groupId>de.tk.opensource</groupId>
     <artifactId>3rdparty-privacy-proxy</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -159,6 +159,8 @@
 
     <properties>
         <java.version>1.8</java.version>
+        <maven.source.plugin>3.1.0</maven.source.plugin>
+        <maven.javadoc.plugin>3.1.1</maven.javadoc.plugin>
         <maven.gpg.plugin>1.6</maven.gpg.plugin>
         <maven.sonatype.nexus.plugin>1.6.8</maven.sonatype.nexus.plugin>
     </properties>
@@ -178,6 +180,32 @@
             </activation>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>${maven.source.plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven.javadoc.plugin}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
