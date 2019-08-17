@@ -30,7 +30,7 @@ mvn install
 ```
 and then start it with
 ```
-java -jar target/3rdpart-privacy-proxy.jar
+java -jar target/3rdparty-privacy-proxy.jar
 ```
 
 To simply **run the application locally** to test, develop or check it out, run
@@ -41,7 +41,7 @@ The configuration relies on **profiles** to determine which configuration block 
 ```
 mvn spring-boot:run -Drun.profiles=dev
 or
-java -jar -Dspring.profiles.active=dev target/3rdpart-privacy-proxy.jar
+java -jar -Dspring.profiles.active=dev target/3rdparty-privacy-proxy.jar
 ```
 
 ## Deployment
