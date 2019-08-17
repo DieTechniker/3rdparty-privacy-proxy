@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
+import de.tk.opensource.privacyproxy.config.UrlPattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -26,26 +27,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.util.WebUtils;
 
 import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
 import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
 import de.tk.opensource.privacyproxy.util.RequestUtils;
-import de.tk.opensource.privacyproxy.util.TkProxyNoProxyRoutePlanner;
+import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 
 /**
- * This is fun code. It will allow you to take back control over information being sent to 3rd Party
- * Providers. So most of those 3PP will not like it ;-) The idea is to allow Whitelisting and
- * Blacklisting. The request to the 3PP Server will come from this service / server. No Header and
- * cookie information will be available by default and has to be whitelisted. If you know about
- * certain parameters you need to forbid or filtered, use blacklisting. If the service delivers a
- * response, this also has to be kind of whitelisted. Cookies will be set by this service and thus
- * will always be 1st party! You have to implement your own RoutingHandler per provider. E.g. you
- * could write a RoutingProvider to proxy traffic to an external Matomo instance. REQUIREMENT: You
- * have to be able to configure a 3PP JS to talk to this service URL instead of their server
- * directly. If they don't allow this without patching their code by yourself, look for another
- * service provider. Therer is no technical requirement for not allowing this.
+ * This component will allow you to take back control over information being sent to 3rd Party
+ * Providers. The idea is to allow Whitelisting and Blacklisting. The request to the 3PP Server
+ * will come from this service / server. No header and cookie information will be available by
+ * default and has to be whitelisted. If you know about certain parameters you need to forbid or
+ * filtered, use blacklisting. If the service delivers a response, this also has to be kind of
+ * whitelisted. Cookies will be set by this service and thus will always be 1st party! You have
+ * to implement your own RoutingHandler per provider. E.g. you could write a RoutingProvider to
+ * proxy traffic to an external Matomo instance. <br/>
+ * REQUIREMENT: You have to be able to configure the 3rd Party JS to talk to this service URL
+ * instead of their server directly. If they don't allow this without patching their code by
+ * yourself, look for another service provider. There is no technical requirement for not
+ * allowing this.
  */
+@Controller
+@RequestMapping(value = UrlPattern.Contexts.PROXY)
 public abstract class RoutingHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RoutingHandler.class);
@@ -53,7 +59,7 @@ public abstract class RoutingHandler {
 	private static final String[] DEFAULT = new String[0];
 
 	@Autowired
-	private TkProxyNoProxyRoutePlanner tkProxyNoProxyRoutePlanner;
+	private ProxyRoutePlanner proxyRoutePlanner;
 
 	/**
 	 * Basic implementation for requests, which are routed through the privacy-proxy. It can be
@@ -66,7 +72,7 @@ public abstract class RoutingHandler {
 		String				trackingEndpoint
 	) {
 		final CloseableHttpClient httpClient =
-			HttpClients.custom().setRoutePlanner(tkProxyNoProxyRoutePlanner.getRoutePlanner())
+			HttpClients.custom().setRoutePlanner(proxyRoutePlanner.getRoutePlanner())
 			.build();
 		HttpRequestBase httpRequest;
 		try {
@@ -83,23 +89,23 @@ public abstract class RoutingHandler {
 			}
 
 			// add required Cookies
-			addRequiredCookiesToRequest(httpRequest, request);
+			addWhitelistedCookiesToRequest(httpRequest, request);
 
 			// add required headers
 			// add provider specific response headers
-			for (final String requiredHeader : getRequiredRequestHeaders()) {
-				final String header = request.getHeader(requiredHeader);
-				if (header != null) {
-					httpRequest.addHeader(requiredHeader, header);
+			for (final String headerName : getWhitelistedRequestHeaders()) {
+				final String headerValue = request.getHeader(headerName);
+				if (headerValue != null) {
+					httpRequest.addHeader(headerName, headerValue);
 				}
 			}
 
-			// add additional params
+			// add additional headers
 			for (
-				final Map.Entry<String, String> entry
-				: getAdditionalRequestProperties(request).entrySet()
+				final Map.Entry<String, String> header
+				: getAdditionalRequestHeaders(request).entrySet()
 			) {
-				httpRequest.addHeader(entry.getKey(), entry.getValue());
+				httpRequest.addHeader(header.getKey(), header.getValue());
 			}
 
 			LOGGER.debug("Calling {}", httpRequest.getURI());
@@ -114,10 +120,10 @@ public abstract class RoutingHandler {
 			responseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
 
 			// add provider specific response headers
-			for (final String requiredHeader : getRequiredResponseHeaders()) {
-				final String header = response.getFirstHeader(requiredHeader).getValue();
-				if (header != null) {
-					responseHeaders.add(requiredHeader, header);
+			for (final String headerName : getWhitelistedResponseHeaders()) {
+				final String headerValue = response.getFirstHeader(headerName).getValue();
+				if (headerValue != null) {
+					responseHeaders.add(headerName, headerValue);
 				}
 			}
 
@@ -198,23 +204,23 @@ public abstract class RoutingHandler {
 	 *
 	 * @return
 	 */
-	private HttpRequestBase addRequiredCookiesToRequest(
+	private HttpRequestBase addWhitelistedCookiesToRequest(
 		HttpRequestBase    connection,
 		HttpServletRequest request
 	) {
-		if (getRequiredCookies().length > 0) {
+		if (getWhitelistedCookieNames().length > 0) {
 			final StringBuilder cookies = new StringBuilder();
-			for (final String requiredCookie : getRequiredCookies()) {
+			for (final String cookieName : getWhitelistedCookieNames()) {
 				switch (getCookieNameMatchType()) {
 
 					case FULL :
-						appendCookie(cookies, WebUtils.getCookie(request, requiredCookie));
+						appendCookie(cookies, WebUtils.getCookie(request, cookieName));
 						break;
 
 					case PREFIX :
 						for (
 							Cookie cookieStartingWithPrefix
-							: getCookiesByPrefix(request, requiredCookie)
+							: getCookiesByPrefix(request, cookieName)
 						) {
 							appendCookie(cookies, cookieStartingWithPrefix);
 						}
@@ -287,7 +293,7 @@ public abstract class RoutingHandler {
 	/**
 	 * request headers that should be transferred to the endpoint
 	 */
-	protected String[] getRequiredRequestHeaders() {
+	protected String[] getWhitelistedRequestHeaders() {
 		return DEFAULT;
 	}
 
@@ -298,14 +304,14 @@ public abstract class RoutingHandler {
 	/**
 	 * properties which should be added to the request and aren't added by default
 	 */
-	protected Map<String, String> getAdditionalRequestProperties(HttpServletRequest request) {
+	protected Map<String, String> getAdditionalRequestHeaders(HttpServletRequest request) {
 		return Collections.emptyMap();
 	}
 
 	/**
 	 * cookies that will be copied from the client request to the endpoint request
 	 */
-	protected String[] getRequiredCookies() {
+	protected String[] getWhitelistedCookieNames() {
 		return DEFAULT;
 	}
 
@@ -326,7 +332,7 @@ public abstract class RoutingHandler {
 	/**
 	 * response headers which should be transferred back to the client
 	 */
-	protected String[] getRequiredResponseHeaders() {
+	protected String[] getWhitelistedResponseHeaders() {
 		return DEFAULT;
 	}
 
