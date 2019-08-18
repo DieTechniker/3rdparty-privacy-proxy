@@ -26,7 +26,7 @@ http:
 spring:
   profiles: dev
 assets:
-  fileLocation: 'C:\SPU\tmp\3rdparty-privacy-proxy'
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
 google:
   fonts:
     endpoints:
@@ -43,9 +43,9 @@ logging:
 spring:
   profiles: qa
 assets:
-  fileLocation: 'tmp/3rdparty-privacy-proxy'
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
 ---
 spring:
   profiles: prod
 assets:
-  fileLocation: 'tmp/3rdparty-privacy-proxy'
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
