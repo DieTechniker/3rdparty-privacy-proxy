@@ -1,5 +1,7 @@
 # TK 3rd Party Privacy Proxy [![Build Status](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy)
 
+## Maven Dependency [![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy)
+
 Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider you use without losing any functionality on your end. Further more this privacy proxy delivers you the ultimate knowledge about what information are being transferred to any 3rd Party Provider as well as independence from their servers.
 
 ## Getting Started
@@ -28,7 +30,7 @@ mvn install
 ```
 and then start it with
 ```
-java -jar target/3rdpart-privacy-proxy.jar
+java -jar target/3rdparty-privacy-proxy.jar
 ```
 
 To simply **run the application locally** to test, develop or check it out, run
@@ -39,7 +41,7 @@ The configuration relies on **profiles** to determine which configuration block 
 ```
 mvn spring-boot:run -Drun.profiles=dev
 or
-java -jar -Dspring.profiles.active=dev target/3rdpart-privacy-proxy.jar
+java -jar -Dspring.profiles.active=dev target/3rdparty-privacy-proxy.jar
 ```
 
 ## Deployment

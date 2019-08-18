@@ -4,11 +4,11 @@ spring:
 server:
   port: 2907
 logging:
-  file: log/privacy-proxy.log
+  file: log/3rdparty-privacy-proxy.log
   level:
     ROOT: INFO
     de.tk.opensource.privacyproxy: INFO
-    de.tk.opensource.privacyproxy.controller: DEBUG
+    de.tk.opensource.privacyproxy.routing: DEBUG
 management:
   endpoints:
     enabled-by-default: false
@@ -17,15 +17,16 @@ management:
       enabled: true
 ---
 spring:
-  profiles: tk-proxy
+  profiles: proxy
 http:
-  proxyHost: proxy.tk-inline.de
-  proxyPort: 8080
+  proxyHost:
+  proxyPort:
+  nonProxyHosts:
 ---
 spring:
   profiles: dev
 assets:
-  fileLocation: 'C:\SPU\Temp'
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
 google:
   fonts:
     endpoints:
@@ -35,16 +36,6 @@ google:
         filename: 'open-sans.zip'
     update: true
     interval: '0 */2 * * * ?'
-example:
-  scripts:
-    endpoints:
-      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.js'
-        filename: 'jquery.js'
-    update: true
-    interval: '0 */2 * * * ?'
-  routing:
-    endpoint: 'https://tracking.example.de/dev/piwik.php'
-    environment: dev
 logging:
   level:
     de.tk.opensource.privacyproxy: DEBUG
@@ -52,27 +43,9 @@ logging:
 spring:
   profiles: qa
 assets:
-  fileLocation: 'tmp/privacy-proxy'
-example:
-  scripts:
-    endpoints:
-      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.min.js'
-        filename: 'jquery.js'
-    interval: '0 */2 * * * ?'
-  routing:
-    endpoint: https://tracking.example.de/qa/piwik.php
-    environment: qa
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
 ---
 spring:
   profiles: prod
 assets:
-  fileLocation: 'tmp/privacy-proxy'
-example:
-  scripts:
-    endpoints:
-      - remoteUrl: 'https://code.jquery.com/jquery-3.3.1.min.js'
-        filename: 'jquery.js'
-    interval: '0 */30 * * * ?'
-  routing:
-    endpoint: 'https://tracking.example.de/prod/piwik.php'
-    environment: prod
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
