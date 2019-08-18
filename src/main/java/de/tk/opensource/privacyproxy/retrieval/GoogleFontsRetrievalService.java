@@ -14,6 +14,7 @@ import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
 
 /**
  * This is an implementation of the AssetRetrievalService to download Google Fonts.
+ * The update runs scheduled as configured in the application.yml.
  */
 @Component
 @ConditionalOnProperty("google.fonts.update")
