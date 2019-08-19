@@ -41,9 +41,8 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	/**
 	 * Method to fetch the assets defined in the proper implementation class. You need to implement
 	 * one AssetRetrievalService class per Provider. A provider is a logical group which should
-	 * represent the source of the files. e.g. a "google-fonts" provider would be a useful case The
-	 * endpoints can be configured as a single URL or a list of comma separated URLs. Put them into
-	 * the application.yml If the endpoint delivers a ZIP file it will be extracted
+	 * represent the source of the files. Put them into the application.yml If the endpoint delivers
+	 * a ZIP file it will be extracted
 	 */
 	public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
 		boolean directoryAvailable;
