@@ -27,25 +27,6 @@ spring:
   profiles: dev
 assets:
   fileLocation: '/tmp/3rdparty-privacy-proxy'
-google:
-  fonts:
-    endpoints:
-      - remoteUrl: 'https://fonts.google.com/download?family=Roboto'
-        filename: 'roboto.zip'
-      - remoteUrl: 'https://fonts.google.com/download?family=Open+Sans'
-        filename: 'open-sans.zip'
-    update: true
-    interval: '0 */2 * * * ?'
 logging:
   level:
     de.tk.opensource.privacyproxy: DEBUG
----
-spring:
-  profiles: qa
-assets:
-  fileLocation: '/tmp/3rdparty-privacy-proxy'
----
-spring:
-  profiles: prod
-assets:
-  fileLocation: '/tmp/3rdparty-privacy-proxy'
