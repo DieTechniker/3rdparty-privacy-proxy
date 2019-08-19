@@ -8,10 +8,9 @@ Deliveres functionality to securely fetch and provide 3rd Party resources as wel
 
 This software is built with JAVA / Spring Boot. You do require a fully working Java environment to make it running. You can simply build this project with maven to get an executable JAR which contains all you need. Customizing the mvn file you could also create a war. Your choice. For most of you the JAR will just do fine. 
 
-To get things up and running there are two parts to do
-* Configure the ```application.yml```
-* Implement the required **Delivery**, **Retrieval** or **Routing** Proxy using the abstract classes to get and deliver assets or route information out. You can and should implement as many Proxies / Controllers as you require. Read the inline code documentation for an explaination what is done where.
-* Have a look at the sample implementation that exists for every abstract class before you start coding your own services.
+This ist just the library to deliver the base functionality. To implement your own privacy secured retrieval and routing services clone the example project from here: https://github.com/DieTechniker/3rdparty-privacy-proxy-examples
+
+**If you want to contribute to the base library, continue reading. If you want to use this tool, please continue in the example repo linked above**
 
 ### Prerequisites
 
@@ -63,6 +62,7 @@ Check out the supplied example config and implementations to get an idea what ca
 * **Artur Baron** - *Writing this amazing peace of code*
 * **Benjamin Stark** - *Making the open source version ready to appear right here*
 * **Jan Thiel** - *Developing the idea behind this project and writing the docs*
+* **Kassim Hölting** - *Contributing to the v2.0 release and bringing it to Maven Central*
 
 ## License
 
