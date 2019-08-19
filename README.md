@@ -1,6 +1,7 @@
-# TK 3rd Party Privacy Proxy [![Build Status](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy)
+ [![Build Status](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy)
 
-## Maven Dependency [![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy)
+# TK 3rd Party Privacy Proxy 
 
 Deliveres functionality to securely fetch and provide 3rd Party resources as well as proxying requests back to the 3rd Party Provider. The users of your website will remain private against any 3rd Party Provider you use without losing any functionality on your end. Further more this privacy proxy delivers you the ultimate knowledge about what information are being transferred to any 3rd Party Provider as well as independence from their servers.
 
@@ -45,12 +46,11 @@ java -jar -Dspring.profiles.active=dev target/3rdparty-privacy-proxy.jar
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system ...
+Use the Maven Central dependency within your code.
 
 ## Configuration
 
-All configuration is done within the ```application.yml``` config file. This is where you will place your assets to download by listing remote endpoints and target filenames, configure local directory paths as well as the dev, prod and whatever profiles you require. Those values can then be used within your implementations.
-Check out the supplied example config and implementations to get an idea what can be configured. The configuration is based on yaml.
+All configuration is done within the ```application.yml``` config file of your implementation code. Your code will use this library as a dependency. So do not change something within this base code.
 
 ## Built With
 
@@ -59,10 +59,10 @@ Check out the supplied example config and implementations to get an idea what ca
 
 ## Authors
 
-* **Artur Baron** - *Writing this amazing peace of code*
-* **Benjamin Stark** - *Making the open source version ready to appear right here*
-* **Jan Thiel** - *Developing the idea behind this project and writing the docs*
-* **Kassim Hölting** - *Contributing to the v2.0 release and bringing it to Maven Central*
+* **Kassim Hölting** - *Contributing to the v1.0 release and bringing it to Maven Central*
+* **Artur Baron** - *Writing this first version of the base library*
+* **Benjamin Stark** - *Making the first open source version of the base library ready to appear*
+* **Jan Thiel** - *Developing the idea behind this project, driving it's development and writing the docs*
 
 ## License
 
