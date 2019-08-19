@@ -24,18 +24,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
-public class TkProxyNoProxyRoutePlanner {
-	private static final Logger LOGGER = LoggerFactory.getLogger(TkProxyNoProxyRoutePlanner.class);
+public class ProxyRoutePlanner {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyRoutePlanner.class);
 
 	private final ProxyHelper proxyHelper;
 
 	@Value("${http.proxyHost:''}")
 	private String proxyHost;
+
 	@Value("${http.proxyPort:-1}")
 	private Integer proxyPort;
+
 	private DefaultRoutePlanner routePlanner;
 
-	public TkProxyNoProxyRoutePlanner(ProxyHelper proxyHelper) {
+	public ProxyRoutePlanner(ProxyHelper proxyHelper) {
 		this.proxyHelper = proxyHelper;
 	}
 
