@@ -7,6 +7,7 @@
     <artifactId>3rdparty-privacy-proxy</artifactId>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <name>3rd Party Privacy Proxy (Open Source)</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
