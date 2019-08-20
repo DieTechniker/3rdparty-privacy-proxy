@@ -5,8 +5,9 @@
 
     <groupId>de.tk.opensource</groupId>
     <artifactId>3rdparty-privacy-proxy</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
+    <name>3rd Party Privacy Proxy (Open Source)</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
