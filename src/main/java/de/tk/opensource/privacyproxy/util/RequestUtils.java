@@ -26,14 +26,25 @@ public class RequestUtils {
 	}
 
 	public static String getClientIpAddress(HttpServletRequest request) {
+		return getClientIpAddress(request, false);
+	}
+
+	public static String getClientIpAddress(HttpServletRequest request, boolean obfuscate) {
+		String ipAddress = request.getRemoteAddr(); // fallback
 		for (String header : IP_HEADER_CANDIDATES) {
 			String ipList = request.getHeader(header);
 			if (ipList != null && ipList.length() != 0 && !"unknown".equalsIgnoreCase(ipList)) {
-				return ipList.split(",")[0];
+				ipAddress = ipList.split(",")[0];
+				break;
 			}
 		}
 
-		return request.getRemoteAddr();
+		// obfuscate 4th block of ip address
+		if (obfuscate && ipAddress != null && ipAddress.lastIndexOf('.') > 0) {
+			ipAddress = ipAddress.substring(0, ipAddress.lastIndexOf('.')) + ".0";
+		}
+
+		return ipAddress;
 	}
 
 	/**
