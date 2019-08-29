@@ -38,8 +38,28 @@ public class RequestUtilsTest {
 	public void getClientIpAddressObfuscated() {
 		when(mockRequest.getRemoteAddr()).thenReturn("101.102.103.104");
 		assertEquals(
-			"no ip address found",
-			"101.102.103.0",
+			"no ip address found or could not obfuscate",
+			"101.102.0.0",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpAddressObfuscatedShort() {
+		when(mockRequest.getRemoteAddr()).thenReturn("1.2.3.4");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"1.2.0.0",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpAddressObfuscatedInvalid() {
+		when(mockRequest.getRemoteAddr()).thenReturn("101.102.103.");
+		assertEquals(
+			"obfuscated though not a valid ip address was found",
+			"101.102.103.",
 			RequestUtils.getClientIpAddress(mockRequest, true)
 		);
 	}
