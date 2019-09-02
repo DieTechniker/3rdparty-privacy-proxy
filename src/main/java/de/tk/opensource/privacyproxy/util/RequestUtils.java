@@ -15,7 +15,7 @@ public class RequestUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RequestUtils.class);
 
-	private static final String[] IP_HEADER_CANDIDATES =
+	protected static final String[] IP_HEADER_CANDIDATES =
 		{
 			"X-Forwarded-For", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_X_FORWARDED_FOR",
 			"HTTP_X_FORWARDED", "HTTP_X_CLUSTER_CLIENT_IP", "HTTP_CLIENT_IP", "HTTP_FORWARDED_FOR",
@@ -25,15 +25,64 @@ public class RequestUtils {
 	private RequestUtils() {
 	}
 
+	/**
+	 * Lookup IP address in request headers or use {@link HttpServletRequest#getRemoteAddr()} as
+	 * fallback.
+	 *
+	 * @param   request
+	 *
+	 * @return  ip address from request header, use {@link HttpServletRequest#getRemoteAddr()} as
+	 *          fallback
+	 *
+	 * @see     #IP_HEADER_CANDIDATES
+	 */
 	public static String getClientIpAddress(HttpServletRequest request) {
+		return getClientIpAddress(request, false);
+	}
+
+	/**
+	 * Lookup IP address in request headers or use {@link HttpServletRequest#getRemoteAddr()} as
+	 * fallback and obfuscate IP address.
+	 *
+	 * @param   request
+	 * @param   obfuscate  true if last two bytes of IP address should be set to zero
+	 *
+	 * @return  ip address from request header, use {@link HttpServletRequest#getRemoteAddr()} as
+	 *          fallback
+	 *
+	 * @see     #IP_HEADER_CANDIDATES
+	 */
+	public static String getClientIpAddress(HttpServletRequest request, boolean obfuscate) {
+		String ipAddress = request.getRemoteAddr(); // fallback
 		for (String header : IP_HEADER_CANDIDATES) {
 			String ipList = request.getHeader(header);
 			if (ipList != null && ipList.length() != 0 && !"unknown".equalsIgnoreCase(ipList)) {
-				return ipList.split(",")[0];
+				ipAddress = ipList.split(",")[0];
+				break;
 			}
 		}
 
-		return request.getRemoteAddr();
+		if (obfuscate) {
+			ipAddress = obfuscateIpAddress(ipAddress);
+		}
+
+		return ipAddress;
+	}
+
+	/**
+	 * Obfuscates last two bytes of an IP address (set to zero).
+	 *
+	 * @param   ipAddress
+	 *
+	 * @return  obfuscated IP address if a valid one was found, input value otherwise
+	 */
+	public static String obfuscateIpAddress(String ipAddress) {
+		String[] addr = ipAddress.split("\\.");
+		if (addr.length == 4) {
+			addr[2] = addr[3] = "0";
+			return String.join(".", addr);
+		}
+		return ipAddress; // fallback, return input value
 	}
 
 	/**

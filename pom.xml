@@ -5,7 +5,7 @@
 
     <groupId>de.tk.opensource</groupId>
     <artifactId>3rdparty-privacy-proxy</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>3rd Party Privacy Proxy (Open Source)</name>
 
@@ -154,6 +154,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
