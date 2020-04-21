@@ -2,12 +2,8 @@
 
 package de.tk.opensource.privacyproxy.retrieval;
 
-import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
+import java.io.File;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
-import de.tk.opensource.privacyproxy.util.ProxyHelper;
 
 /**
  * This class downloads files from a remote host and stores them grouped by "provider" on the file
@@ -36,7 +31,7 @@ public abstract class AssetRetrievalService implements InitializingBean {
 	private String location;
 
 	@Autowired
-	private ProxyHelper proxyHelper;
+	private AssetRetryRetrievalService assetRetryRetrievalService;
 
 	/**
 	 * Method to fetch the assets defined in the proper implementation class. You need to implement
@@ -55,15 +50,8 @@ public abstract class AssetRetrievalService implements InitializingBean {
 		if (directoryAvailable) {
 			try {
 				LOGGER.info("Updating the {} assets", provider);
-				for (RetrievalEndpoint endpoint : endpoints) {
-
-					// Access the endpoint with a cachebuster to prevent network middleware (corporate proxies) to cache the response
-					URL url = new URL(endpoint.getRemoteUrlWithCacheBuster());
-					URLConnection connection = url.openConnection(proxyHelper.selectProxy(url));
-					connection.setRequestProperty("User-Agent", "3rd Party Privacy Proxy");
-
-					// retrieve remote asset(s) and extract if necessary
-					retrieveAsset(connection, provider, endpoint.getFilename());
+				for (final RetrievalEndpoint endpoint : endpoints) {
+					assetRetryRetrievalService.retrieveAsset(provider, endpoint);
 				}
 				LOGGER.info("Done updating the {} assets", provider);
 			} catch (Exception e) {
@@ -74,56 +62,12 @@ public abstract class AssetRetrievalService implements InitializingBean {
 		}
 	}
 
-	/**
-	 * Retrieve asset from connection and extract if it is a ZIP file.
-	 */
-	private void retrieveAsset(URLConnection connection, String provider, String filename)
-		throws IOException
-	{
-
-		// If the endpoint delivers ZIP, extract it.
-		if (filename.endsWith(".zip")) {
-			try(ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream())) {
-				ZipEntry zipEntry = zipInputStream.getNextEntry();
-				while (zipEntry != null) {
-					writeFile(zipInputStream, provider, zipEntry.getName());
-					zipEntry = zipInputStream.getNextEntry();
-				}
-				zipInputStream.closeEntry();
-			}
-		} else {
-			try(InputStream in = connection.getInputStream()) {
-				writeFile(in, provider, filename);
-			}
-		}
-	}
-
 	public abstract void updateAssets();
 
 	@Override
 	public void afterPropertiesSet() {
 		this.updateAssets();
 	}
-
-	/**
-	 * Writes the retrieved files to disk
-	 */
-	private void writeFile(InputStream inputStream, String provider, String filename) {
-		byte[] buffer = new byte[1024];
-		try(
-			FileOutputStream fos = new FileOutputStream(location + "/" + provider + "/" + filename)
-		) {
-			int len;
-			while ((len = inputStream.read(buffer)) > 0) {
-				fos.write(buffer, 0, len);
-			}
-		} catch (FileNotFoundException f) {
-			LOGGER.error(String.format("unable to write file %s", filename), f);
-		} catch (IOException i) {
-			LOGGER.error(String.format("unable to write file %s", filename), i);
-		}
-	}
-
 }
 
 /*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
