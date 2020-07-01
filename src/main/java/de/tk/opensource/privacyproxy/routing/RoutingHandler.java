@@ -190,7 +190,7 @@ public abstract class RoutingHandler {
 	/**
 	 * Excludes all the blacklisted query params of the request and returns a cleaned query string.
 	 */
-	private String filterQueryString(final Map<String, String> params) {
+	String filterQueryString(final Map<String, String> params) {
 		return createQueryString(filterBlacklistedData(params));
 	}
 
