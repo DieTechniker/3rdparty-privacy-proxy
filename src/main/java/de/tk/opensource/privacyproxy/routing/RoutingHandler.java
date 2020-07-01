@@ -204,7 +204,7 @@ public abstract class RoutingHandler {
 				allowedQueryParams.append("&");
 			}
 			allowedQueryParams.append(entry.getKey()).append("=").append(
-				RequestUtils.urlencode(entry.getValue())
+				transformQueryParam(entry.getKey(), entry.getValue())
 			);
 		}
 		return allowedQueryParams.toString();
@@ -344,6 +344,18 @@ public abstract class RoutingHandler {
 	 */
 	protected CookieNameMatchType getCookieNameMatchType() {
 		return CookieNameMatchType.FULL;
+	}
+
+	/**
+	 * Transform the given query parameter before appending it to the request. The default
+	 * implementation applies percent-encoding to the value.
+	 *
+	 * @param name  query parameter name
+	 * @param value query parameter value
+	 * @return encoded parameter
+	 */
+	protected String transformQueryParam(String name, String value) {
+		return RequestUtils.urlencode(value);
 	}
 
 	/**
