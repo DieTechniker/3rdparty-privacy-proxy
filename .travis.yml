@@ -1,5 +1,5 @@
 language: java
 
 script:
-  # the following command line builds the project, runs the tests with coverage and then execute the SonarCloud analysis
+  # the following command line builds the project, runs the tests with coverage
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install
