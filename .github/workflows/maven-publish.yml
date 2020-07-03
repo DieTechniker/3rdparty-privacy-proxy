@@ -1,8 +1,9 @@
 name: Maven publish release
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:    
+    - 'release/**'
 
 jobs:
   build:
