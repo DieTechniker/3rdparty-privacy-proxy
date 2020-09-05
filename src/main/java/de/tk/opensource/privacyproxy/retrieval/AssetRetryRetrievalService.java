@@ -17,6 +17,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import de.tk.opensource.privacyproxy.util.PDFCorruptedException;
+import de.tk.opensource.privacyproxy.util.PDFHelper;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -45,7 +48,7 @@ public class AssetRetryRetrievalService {
 		backoff = @Backoff(delay = 3000),
 		maxAttempts = 4
 	)
-	void retrieveAsset(String provider, RetrievalEndpoint endpoint) throws IOException {
+	void retrieveAsset(String provider, RetrievalEndpoint endpoint) throws IOException, PDFCorruptedException {
 		final URL url = new URL(endpoint.getRemoteUrlWithCacheBuster());
 		final URLConnection connection = url.openConnection(proxyHelper.selectProxy(url));
 		connection.setRequestProperty("User-Agent", "3rd Party Privacy Proxy");
@@ -56,6 +59,11 @@ public class AssetRetryRetrievalService {
 			retrieveZip(provider, endpoint, connection);
 		} else {
 
+			if (endpoint.getFilename().endsWith(".pdf") &&
+					!PDFHelper.isPdf(IOUtils.toByteArray(connection.getInputStream()))) {
+				throw new PDFCorruptedException(String.format("The requested resource %s wasn't a valid pdf file. " +
+						"Maybe the endpoint has an error?", endpoint.getRemoteUrl()));
+			}
 			// transfer files without loading it to the application memory - performance boost
 			retrieveFileByChannel(provider, endpoint, connection, originalFileSize);
 		}
