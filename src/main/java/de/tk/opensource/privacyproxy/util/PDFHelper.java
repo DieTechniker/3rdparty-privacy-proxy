@@ -3,11 +3,11 @@ package de.tk.opensource.privacyproxy.util;
 public class PDFHelper {
 
     /**
-     * Checks if a byte array is an PDF file.
-     * PDF files starts witch magic numbers.
-     * An File that does not contains PDF magic numbers is therefore not a PDF file.
+     * Check if a byte array is an PDF file.
+     * PDF files starts with magic numbers '%PDF-' and ends with '%%EOF'.
+     * A File that does not contains PDF magic numbers is therefore not a PDF file.
      * @param data file byte array
-     * @return isPDF = true, otherwise false
+     * @return true if byte array looks like a pdf, otherwise false
      */
     public static boolean isPdf(byte[] data) {
         if (data != null && data.length > 4 &&
@@ -16,29 +16,19 @@ public class PDFHelper {
                 data[2] == 0x44 && // D
                 data[3] == 0x46 && // F
                 data[4] == 0x2D) { // -
-
-            // version 1.3 file terminator
-            if (data[5] == 0x31 && data[6] == 0x2E && data[7] == 0x33 &&
-                    data[data.length - 7] == 0x25 && // %
-                    data[data.length - 6] == 0x25 && // %
-                    data[data.length - 5] == 0x45 && // E
-                    data[data.length - 4] == 0x4F && // O
-                    data[data.length - 3] == 0x46 && // F
-                    data[data.length - 2] == 0x20 && // SPACE
-                    data[data.length - 1] == 0x0A) { // EOL
-                return true;
+            int count = 0;
+            int offset = data.length - 8; // check last 8 bytes for %%EOF with optional white-space
+            while (offset < data.length) {
+                if (count == 0 && data[offset] == 0x25) count++; // %
+                if (count == 1 && data[offset] == 0x25) count++; // %
+                if (count == 2 && data[offset] == 0x45) count++; // E
+                if (count == 3 && data[offset] == 0x4F) count++; // O
+                if (count == 4 && data[offset] == 0x46) count++; // F
+                offset++;
             }
-
-            // version 1.3 file terminator
-            // EOL
-            return data[5] == 0x31 && data[6] == 0x2E && data[7] == 0x34 &&
-                    data[data.length - 6] == 0x25 && // %
-                    data[data.length - 5] == 0x25 && // %
-                    data[data.length - 4] == 0x45 && // E
-                    data[data.length - 3] == 0x4F && // O
-                    data[data.length - 2] == 0x46 && // F
-                    data[data.length - 1] == 0x0A;
+            return count == 5;
         }
+
         return false;
     }
 }
