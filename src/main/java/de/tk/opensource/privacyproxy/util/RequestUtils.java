@@ -92,7 +92,6 @@ public class RequestUtils {
 			}
 		} catch (UnknownHostException e) {
 			LOGGER.debug(e.getMessage());
-			return ipAddress; // fallback, return input value
 		}
 		return ipAddress;
 	}
