@@ -65,11 +65,61 @@ public class RequestUtilsTest {
 	}
 
 	@Test
+	public void getClientIpV6AddressObfuscatedFullAddress() {
+		when(mockRequest.getRemoteAddr()).thenReturn("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"2001:db8:85a3::8a2e:0:0",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpV6AddressObfuscatedSimplifiedAddress() {
+		when(mockRequest.getRemoteAddr()).thenReturn("2b01:4b8:160:80e1::2");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"2b01:4b8:160:80e1::",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpV6AddressObfuscatedLastSixSegmentsAreZero() {
+		when(mockRequest.getRemoteAddr()).thenReturn("2001:db8::");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"2001:db8::",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpV6AddressObfuscatedFirstSixSegmentsAreZero() {
+		when(mockRequest.getRemoteAddr()).thenReturn("::1234:5678");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"::",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
+	public void getClientIpV6AddressObfuscatedMiddleFourSegmentsAreZero() {
+		when(mockRequest.getRemoteAddr()).thenReturn("2001:db8::1234:5678");
+		assertEquals(
+			"no ip address found or could not obfuscate",
+			"2001:db8::",
+			RequestUtils.getClientIpAddress(mockRequest, true)
+		);
+	}
+
+	@Test
 	public void urlencode() {
 		assertEquals(
 			"url encoding failed",
-			RequestUtils.urlencode("abc$&%?-:;"),
-			"abc%24%26%25%3F-%3A%3B"
+			"abc%24%26%25%3F-%3A%3B",
+			RequestUtils.urlencode("abc$&%?-:;")
 		);
 	}
 }

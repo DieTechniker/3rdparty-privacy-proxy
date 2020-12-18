@@ -3,17 +3,21 @@
 package de.tk.opensource.privacyproxy.util;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.tomcat.util.net.IPv6Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RequestUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RequestUtils.class);
+	private static final byte LENGTH_IPV4 = 4;
+	private static final byte LENGTH_IPV6 = 8;
+	private static final String IPV6_SHORT_FORM_SEPARATOR = "::";
 
 	protected static final String[] IP_HEADER_CANDIDATES =
 		{
@@ -77,12 +81,65 @@ public class RequestUtils {
 	 * @return  obfuscated IP address if a valid one was found, input value otherwise
 	 */
 	public static String obfuscateIpAddress(String ipAddress) {
+		try {
+			InetAddress address = InetAddress.getByName(ipAddress);
+			if (address instanceof Inet6Address) {
+				return obfuscateIpV6Address(ipAddress);
+
+			}
+			if (address instanceof Inet4Address) {
+				return obfuscateIpV4Address(ipAddress);
+			}
+		} catch (UnknownHostException e) {
+			LOGGER.debug(e.getMessage());
+		}
+		return ipAddress;
+	}
+
+	private static String obfuscateIpV4Address(String ipAddress) {
 		String[] addr = ipAddress.split("\\.");
-		if (addr.length == 4) {
-			addr[2] = addr[3] = "0";
+		if (addr.length == LENGTH_IPV4) {
+			addr[LENGTH_IPV4 - 2] = addr[LENGTH_IPV4 - 1] = "0";
 			return String.join(".", addr);
 		}
-		return ipAddress; // fallback, return input value
+		return ipAddress;
+	}
+
+	private static String obfuscateIpV6Address(String ipAddress) {
+		String[] addr = ipAddress.split("\\:");
+		int positionOfShortSeparator = ipAddress.indexOf(IPV6_SHORT_FORM_SEPARATOR);
+		if (
+			ipAddress.contains(IPV6_SHORT_FORM_SEPARATOR)
+			&& positionOfShortSeparator != ipAddress.length() - IPV6_SHORT_FORM_SEPARATOR
+				.length()
+		) {
+			addr =
+				getFullIpV6Address(addr.length, positionOfShortSeparator, ipAddress).split("\\:");
+		}
+
+		if (addr.length == LENGTH_IPV6) {
+			addr[LENGTH_IPV6 - 2] = addr[LENGTH_IPV6 - 1] = "0";
+			return IPv6Utils.canonize(String.join(":", addr));
+		}
+		return ipAddress;
+	}
+
+	private static String getFullIpV6Address(
+		int    amountOfIpv6Parts,
+		int    positionOfShortSeparator,
+		String ipAddress
+	) {
+		int startIndex = amountOfIpv6Parts;
+		StringBuilder stringBuilder = new StringBuilder();
+		if (positionOfShortSeparator != 0) {
+			stringBuilder.append(":");
+		} else {
+			startIndex = startIndex - 1;
+		}
+		for (int i = startIndex; i <= LENGTH_IPV6; i++) {
+			stringBuilder.append("0:");
+		}
+		return ipAddress.replace(IPV6_SHORT_FORM_SEPARATOR, stringBuilder.toString());
 	}
 
 	/**
