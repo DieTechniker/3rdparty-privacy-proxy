@@ -30,7 +30,7 @@ public class PDFHelper {
 			&& data[2] == 0x44 // D
 			&& data[3] == 0x46 // F
 			&& data[4] == 0x2D
-		) { // -
+		) {
 			int count = 0;
 			int offset = data.length - 8; // check last 8 bytes for %%EOF with optional white-space
 			while (offset < data.length) {
