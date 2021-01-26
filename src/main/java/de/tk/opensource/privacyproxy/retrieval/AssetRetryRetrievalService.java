@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.retrieval;
 
@@ -30,7 +30,7 @@ import de.tk.opensource.privacyproxy.util.ProxyHelper;
 @Service
 public class AssetRetryRetrievalService {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AssetRetryRetrievalService.class);
+	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Configure where the files will be stored on the file system.
