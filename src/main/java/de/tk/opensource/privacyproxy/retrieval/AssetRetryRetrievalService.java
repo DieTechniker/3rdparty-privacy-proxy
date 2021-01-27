@@ -121,8 +121,7 @@ public class AssetRetryRetrievalService {
 			retrieveFileByChannel(provider, endpoint, byteArrayInputStream, originalFileSize);
 		} else {
 			LOGGER.error(
-				"The requested resource {} wasn't a valid pdf file. Maybe the endpoint has an error "
-				+ "and therefore the pdf content is the content of a maintenance site",
+				"The requested resource {} wasn't a valid pdf file",
 				endpoint.getRemoteUrl()
 			);
 		}
