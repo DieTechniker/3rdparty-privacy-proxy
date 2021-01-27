@@ -61,7 +61,7 @@ public class AssetRetryRetrievalService {
 		} else {
 			try(final InputStream httpInputStream = connection.getInputStream()) {
 				if (endpoint.getFilename().endsWith(".pdf")) {
-					retrievePdf(provider, endpoint, httpInputStream, originalFileSize);
+					retrievePdf(provider, endpoint, httpInputStream, originalFileSize, connection);
 				} else {
 					retrieveFileByChannel(provider, endpoint, httpInputStream, originalFileSize);
 				}
@@ -112,7 +112,8 @@ public class AssetRetryRetrievalService {
 		String			  provider,
 		RetrievalEndpoint endpoint,
 		InputStream		  httpInputStream,
-		long			  originalFileSize
+		long			  originalFileSize,
+		URLConnection	  connection
 	) throws IOException
 	{
 		byte[] bytes = IOUtils.toByteArray(httpInputStream);
@@ -121,8 +122,11 @@ public class AssetRetryRetrievalService {
 			retrieveFileByChannel(provider, endpoint, byteArrayInputStream, originalFileSize);
 		} else {
 			LOGGER.error(
-				"The requested resource {} wasn't a valid pdf file",
-				endpoint.getRemoteUrl()
+				"The requested resource {} wasn't a valid pdf file. Content-type was {}."
+				+ " Maybe the endpoint has an error and therefore the pdf content is the content"
+				+ " of a maintenance site",
+				endpoint.getRemoteUrl(),
+				connection.getContentType()
 			);
 		}
 	}
