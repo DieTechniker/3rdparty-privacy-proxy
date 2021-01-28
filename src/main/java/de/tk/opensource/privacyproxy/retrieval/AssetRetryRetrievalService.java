@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.retrieval;
 
@@ -16,18 +16,21 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
-import de.tk.opensource.privacyproxy.util.PDFCorruptedException;
 import de.tk.opensource.privacyproxy.util.PDFHelper;
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
 
 @Service
 public class AssetRetryRetrievalService {
+
+	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Configure where the files will be stored on the file system.
@@ -46,9 +49,7 @@ public class AssetRetryRetrievalService {
 		backoff = @Backoff(delay = 3000),
 		maxAttempts = 4
 	)
-	void retrieveAsset(String provider, RetrievalEndpoint endpoint) throws IOException,
-		PDFCorruptedException
-	{
+	void retrieveAsset(String provider, RetrievalEndpoint endpoint) throws IOException {
 		final URL url = new URL(endpoint.getRemoteUrlWithCacheBuster());
 		final URLConnection connection = url.openConnection(proxyHelper.selectProxy(url));
 		connection.setRequestProperty("User-Agent", "3rd Party Privacy Proxy");
@@ -60,31 +61,7 @@ public class AssetRetryRetrievalService {
 		} else {
 			try(final InputStream httpInputStream = connection.getInputStream()) {
 				if (endpoint.getFilename().endsWith(".pdf")) {
-
-					// copy stream to check for pdf validity, afterwards use another new stream to handle download
-					try(final ByteArrayOutputStream copiedStream = new ByteArrayOutputStream()) {
-						IOUtils.copy(httpInputStream, copiedStream);
-						if (!PDFHelper.isPdf(copiedStream.toByteArray())) {
-							throw new PDFCorruptedException(
-								String.format(
-									"The requested resource %s wasn't a valid pdf file. Maybe the endpoint has an error "
-									+ "and therefore the pdf content is the content of a maintenance site",
-									endpoint.getRemoteUrl()
-								)
-							);
-						} // Looks like we have a valid pdf. Download it...
-						try(
-							final ByteArrayInputStream inputStream =
-								new ByteArrayInputStream(copiedStream.toByteArray())
-						) {
-							retrieveFileByChannel(
-								provider,
-								endpoint,
-								inputStream,
-								originalFileSize
-							);
-						}
-					}
+					retrievePdf(provider, endpoint, httpInputStream, originalFileSize, connection);
 				} else {
 					retrieveFileByChannel(provider, endpoint, httpInputStream, originalFileSize);
 				}
@@ -128,6 +105,29 @@ public class AssetRetryRetrievalService {
 					StandardCopyOption.REPLACE_EXISTING
 				);
 			}
+		}
+	}
+
+	void retrievePdf(
+		String			  provider,
+		RetrievalEndpoint endpoint,
+		InputStream		  httpInputStream,
+		long			  originalFileSize,
+		URLConnection	  connection
+	) throws IOException
+	{
+		byte[] bytes = IOUtils.toByteArray(httpInputStream);
+		if (PDFHelper.isPdf(bytes)) {
+			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+			retrieveFileByChannel(provider, endpoint, byteArrayInputStream, originalFileSize);
+		} else {
+			LOGGER.error(
+				"The requested resource {} wasn't a valid pdf file. Content-type was {}."
+				+ " Maybe the endpoint has an error and therefore the pdf content is the content"
+				+ " of a maintenance site",
+				endpoint.getRemoteUrl(),
+				connection.getContentType()
+			);
 		}
 	}
 
