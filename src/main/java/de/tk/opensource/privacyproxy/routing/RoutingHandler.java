@@ -47,17 +47,16 @@ import de.tk.opensource.privacyproxy.util.RequestUtils;
  * use blacklisting. If the service delivers a response, this also has to be kind of whitelisted.
  * Cookies will be set by this service and thus will always be 1st party! You have to implement your
  * own RoutingHandler per provider. E.g. you could write a RoutingProvider to proxy traffic to an
- * external Matomo instance.
- * REQUIREMENT: You have to be able to configure the 3rd Party JS to talk to this service URL
- * instead of their server directly. If they don't allow this without patching their code by
- * yourself, look for another service provider. There is no technical requirement for not allowing
- * this.
+ * external Matomo instance. REQUIREMENT: You have to be able to configure the 3rd Party JS to talk
+ * to this service URL instead of their server directly. If they don't allow this without patching
+ * their code by yourself, look for another service provider. There is no technical requirement for
+ * not allowing this.
  */
 @Controller
 @RequestMapping(value = UrlPattern.Contexts.PROXY)
 public abstract class RoutingHandler {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RoutingHandler.class);
+	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
 
@@ -350,9 +349,10 @@ public abstract class RoutingHandler {
 	 * Transform the given query parameter before appending it to the request. The default
 	 * implementation applies percent-encoding to the value.
 	 *
-	 * @param name  query parameter name
-	 * @param value query parameter value
-	 * @return encoded parameter
+	 * @param   name   query parameter name
+	 * @param   value  query parameter value
+	 *
+	 * @return  encoded parameter
 	 */
 	protected String transformQueryParam(String name, String value) {
 		return RequestUtils.urlencode(value);
