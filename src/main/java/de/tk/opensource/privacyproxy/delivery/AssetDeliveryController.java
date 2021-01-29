@@ -29,7 +29,7 @@ import de.tk.opensource.privacyproxy.config.UrlPattern;
 @RequestMapping(value = UrlPattern.Contexts.DELIVERY)
 public abstract class AssetDeliveryController {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AssetDeliveryController.class);
+	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	private ResourceLoader resourceLoader;

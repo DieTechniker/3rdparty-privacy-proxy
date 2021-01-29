@@ -22,7 +22,7 @@ import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
  */
 public abstract class AssetRetrievalService implements InitializingBean {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AssetRetrievalService.class);
+	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Configure where the files will be stored on the file system.
