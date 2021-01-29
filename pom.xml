@@ -5,14 +5,14 @@
 
     <groupId>de.tk.opensource</groupId>
     <artifactId>3rdparty-privacy-proxy</artifactId>
-    <version>1.0.11</version>
+    <version>1.0.12</version>
     <packaging>jar</packaging>
     <name>3rd Party Privacy Proxy (Open Source)</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.0.RELEASE</version>
+        <version>2.4.2</version>
     </parent>
 
     <description>
