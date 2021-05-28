@@ -1,5 +1,5 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/de.tk.opensource/3rdparty-privacy-proxy)
- [![Build Status](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.org/DieTechniker/3rdparty-privacy-proxy) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=DieTechniker_3rdparty-privacy-proxy&metric=alert_status)](https://sonarcloud.io/dashboard?id=DieTechniker_3rdparty-privacy-proxy)
+ [![Build Status](https://travis-ci.com/DieTechniker/3rdparty-privacy-proxy.svg?branch=master)](https://travis-ci.com/DieTechniker/3rdparty-privacy-proxy) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=DieTechniker_3rdparty-privacy-proxy&metric=alert_status)](https://sonarcloud.io/dashboard?id=DieTechniker_3rdparty-privacy-proxy)
 
 # TK 3rd Party Privacy Proxy 
 
