@@ -1,5 +1,3 @@
-spring:
-  profiles: dev
 assets:
   fileLocation: '/tmp/3rdparty-privacy-proxy'
 logging:
