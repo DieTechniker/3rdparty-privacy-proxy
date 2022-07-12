@@ -1,0 +1,6 @@
+spring:
+  profiles: proxy
+http:
+  proxyHost:
+  proxyPort:
+  nonProxyHosts:
