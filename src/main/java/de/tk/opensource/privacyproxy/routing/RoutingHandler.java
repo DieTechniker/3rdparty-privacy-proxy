@@ -59,7 +59,7 @@ public abstract class RoutingHandler {
 
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private static final String[] DEFAULT_RETURN_VALUE = new String[] { "Content-Type" };
+	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
 
 	@Autowired
 	private RestTemplateProxyCustomizer restTemplateProxyCustomizer;
@@ -243,13 +243,16 @@ public abstract class RoutingHandler {
 		return mediaType;
 	}
 
-	protected HttpHeaders getResponseHeaders(final HttpHeaders headers) {
+	protected HttpHeaders getResponseHeaders(final HttpHeaders sourceHeaders) {
 		final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
 		whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
+		if (sourceHeaders.getContentType() != null) {
+			whitelistedResponseHeaders.add(HttpHeaders.CONTENT_TYPE, sourceHeaders.getContentType().toString());
+		}
 
 		// add provider specific response headers
 		for (final String headerName : getWhitelistedResponseHeaders()) {
-			final String headerValue = headers.toSingleValueMap().get(headerName);
+			final String headerValue = sourceHeaders.toSingleValueMap().get(headerName);
 			if (headerValue != null) {
 				whitelistedResponseHeaders.add(headerName, headerValue);
 			}
