@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.util;
 
@@ -7,12 +7,17 @@ import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+import static de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer.ROUTING_TIMEOUT_IN_SECS;
 
 @Component
 public class ProxyHelper {
@@ -96,6 +101,19 @@ public class ProxyHelper {
 		}
 
 		return pattern.equals(hostname);
+	}
+
+	public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
+		final RequestConfig requestConfig =
+			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_IN_SECS * 1000)
+			.setConnectionRequestTimeout(ROUTING_TIMEOUT_IN_SECS * 1000).setSocketTimeout(
+				ROUTING_TIMEOUT_IN_SECS * 1000
+			)
+			.build();
+		return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
+			proxyRoutePlanner.getRoutePlanner()
+		)
+		.build();
 	}
 }
 

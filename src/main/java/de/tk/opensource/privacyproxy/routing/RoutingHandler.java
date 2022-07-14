@@ -1,14 +1,11 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.routing;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -16,28 +13,32 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.WebUtils;
 
 import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
 import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
 import de.tk.opensource.privacyproxy.config.UrlPattern;
+import de.tk.opensource.privacyproxy.util.ProxyHelper;
 import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import de.tk.opensource.privacyproxy.util.RequestUtils;
+import de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer;
 
 /**
  * This component will allow you to take back control over information being sent to 3rd Party
@@ -56,36 +57,83 @@ import de.tk.opensource.privacyproxy.util.RequestUtils;
 @RequestMapping(value = UrlPattern.Contexts.PROXY)
 public abstract class RoutingHandler {
 
-	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
+	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
+	private static final String[] DEFAULT_RETURN_VALUE = new String[] { "Content-Type" };
 
-	private static final int ROUTING_TIMEOUT_IN_SECS = 5;
+	@Autowired
+	private RestTemplateProxyCustomizer restTemplateProxyCustomizer;
 
 	@Autowired
 	private ProxyRoutePlanner proxyRoutePlanner;
+
+	@Autowired
+	private ProxyHelper proxyHelper;
 
 	/**
 	 * Basic implementation for requests, which are routed through the privacy-proxy. It can be
 	 * configured by overriding certain methods. Every routing endpoint must have a dedicated
 	 * specific handler.
 	 */
+	public ResponseEntity<Resource> handleGenericRequestInternal(
+		final String			  targetEndpoint,
+		final Map<String, String> queryStrings,
+		final HttpServletRequest  request,
+		@Nullable
+		final String			  body,
+		final HttpMethod		  method
+	) {
+		final String queryString = filterQueryString(queryStrings);
+		final URI uri =
+			UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
+			.toUri();
+
+		final HttpHeaders headers = new HttpHeaders();
+		addHeaders(request, headers);
+		addWhitelistedCookies(request, headers);
+
+		final HttpEntity<String> httpEntity = new HttpEntity<>(body, headers);
+		try {
+			final RestTemplate restTemplate =
+				new RestTemplateBuilder(restTemplateProxyCustomizer).build();
+			this.logger.debug("Calling {}", uri);
+			final ResponseEntity<Resource> responseEntity =
+				restTemplate.exchange(uri, method, httpEntity, Resource.class);
+
+			final HttpHeaders responseHeaders = responseEntity.getHeaders();
+			final ResponseEntity<Resource> customResponseEntity =
+				ResponseEntity.status(responseEntity.getStatusCode()).headers(
+					getResponseHeaders(responseHeaders)
+				)
+				.body(responseEntity.getBody());
+
+			log(targetEndpoint, queryString.getBytes().length, customResponseEntity);
+
+			return customResponseEntity;
+		} catch (Exception e) {
+			logger.warn(
+				"Failed to proxy request. Endpoint: " + targetEndpoint + ", Error: "
+				+ e.getMessage(),
+				e
+			);
+			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
+		}
+	}
+
+	/**
+	 * @deprecated  Use {@linkplain #handleGenericRequestInternal(String, Map, HttpServletRequest,
+	 *              String, HttpMethod)} instead. Basic implementation for requests, which are
+	 *              routed through the privacy-proxy. It can be configured by overriding certain
+	 *              methods. Every routing endpoint must have a dedicated specific handler.
+	 */
+	@Deprecated
 	public ResponseEntity<Object> handlePostInternal(
 		HttpServletRequest  request,
 		Map<String, String> data,
 		String				trackingEndpoint
 	) {
-		final RequestConfig requestConfig =
-			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_IN_SECS * 1000)
-			.setConnectionRequestTimeout(ROUTING_TIMEOUT_IN_SECS * 1000).setSocketTimeout(
-				ROUTING_TIMEOUT_IN_SECS * 1000
-			)
-			.build();
 		final CloseableHttpClient httpClient =
-			HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
-				proxyRoutePlanner.getRoutePlanner()
-			)
-			.build();
+			proxyHelper.getCloseableHttpClient(proxyRoutePlanner);
 		HttpRequestBase httpRequest;
 		try {
 
@@ -101,7 +149,7 @@ public abstract class RoutingHandler {
 			}
 
 			// add required Cookies
-			addWhitelistedCookiesToRequest(httpRequest, request);
+			addLegacyWhitelistedCookiesToRequest(httpRequest, request);
 
 			// add required headers
 			// add provider specific response headers
@@ -120,41 +168,39 @@ public abstract class RoutingHandler {
 				httpRequest.addHeader(header.getKey(), header.getValue());
 			}
 
-			LOGGER.debug("Calling {}", httpRequest.getURI());
+			logger.debug("Calling {}", httpRequest.getURI());
 
 			// send it
 			final HttpResponse response = httpClient.execute(httpRequest);
 
 			// add response headers
-			final HttpHeaders responseHeaders = new HttpHeaders();
-			responseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
-
-			// add provider specific response headers
-			for (final String headerName : getWhitelistedResponseHeaders()) {
-				final String headerValue = response.getFirstHeader(headerName).getValue();
-				if (headerValue != null) {
-					responseHeaders.add(headerName, headerValue);
-				}
-			}
+			final HttpHeaders responseHeaders =
+				getResponseHeaders(
+					new HttpHeaders(
+						new MultiValueMapAdapter<>(
+							Arrays.stream(response.getAllHeaders()).collect(
+								Collectors.toMap(
+									NameValuePair::getName,
+									e -> Collections.singletonList(e.getValue())
+								)
+							)
+						)
+					)
+				);
 
 			// reporting
-			trackRoutingRequest(
+			logger.debug(
+				"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
 				trackingEndpoint,
 				queryString.getBytes().length,
 				response.getEntity() != null ? response.getEntity().getContentLength() : 0
 			);
 
 			// media type
-			MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
-			if (response.getEntity() != null) {
-				Header contentType = response.getEntity().getContentType();
-				if (contentType != null) {
-					mediaType = MediaType.valueOf(contentType.getValue());
-				}
-			}
+			MediaType mediaType = getResponseMediaType(response);
 
 			final int statusCode = response.getStatusLine().getStatusCode();
-			LOGGER.debug(
+			logger.debug(
 				"Response to caller: Content Type {} | Status Code {}",
 				mediaType.toString(),
 				statusCode
@@ -165,13 +211,13 @@ public abstract class RoutingHandler {
 			if (response.getEntity() != null) {
 				responseBody = IOUtils.toByteArray(response.getEntity().getContent());
 			}
-			LOGGER.debug("Body:\n{}", Arrays.toString(responseBody));
+			logger.debug("Body:\n{}", Arrays.toString(responseBody));
 
 			return ResponseEntity.status(statusCode).headers(responseHeaders).contentType(mediaType)
 			.body(responseBody);
 
 		} catch (Exception e) {
-			LOGGER.warn(
+			logger.warn(
 				"Failed to proxy request. Endpoint: " + trackingEndpoint + ", Error: "
 				+ e.getMessage(),
 				e
@@ -181,9 +227,34 @@ public abstract class RoutingHandler {
 			try {
 				httpClient.close();
 			} catch (IOException e) {
-				LOGGER.warn(e.getMessage(), e);
+				logger.warn(e.getMessage(), e);
 			}
 		}
+	}
+
+	private MediaType getResponseMediaType(HttpResponse response) {
+		MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+		if (response.getEntity() != null) {
+			Header contentType = response.getEntity().getContentType();
+			if (contentType != null) {
+				mediaType = MediaType.valueOf(contentType.getValue());
+			}
+		}
+		return mediaType;
+	}
+
+	protected HttpHeaders getResponseHeaders(final HttpHeaders headers) {
+		final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
+		whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
+
+		// add provider specific response headers
+		for (final String headerName : getWhitelistedResponseHeaders()) {
+			final String headerValue = headers.toSingleValueMap().get(headerName);
+			if (headerValue != null) {
+				whitelistedResponseHeaders.add(headerName, headerValue);
+			}
+		}
+		return whitelistedResponseHeaders;
 	}
 
 	/**
@@ -219,43 +290,72 @@ public abstract class RoutingHandler {
 		return data;
 	}
 
+	private void addHeaders(HttpServletRequest request, HttpHeaders headers) {
+		for (final String headerName : getWhitelistedRequestHeaders()) {
+			final String headerValue = request.getHeader(headerName);
+			if (headerValue != null) {
+				headers.add(headerName, headerValue);
+			}
+		}
+
+		// add additional headers
+		for (
+			final Map.Entry<String, String> header
+			: getAdditionalRequestHeaders(request).entrySet()
+		) {
+			headers.add(header.getKey(), header.getValue());
+		}
+	}
+
+	private void addWhitelistedCookies(
+		final HttpServletRequest request,
+		final HttpHeaders		 headers
+	) {
+		if (getWhitelistedCookieNames().length > 0) {
+			headers.add("Cookie", getWhitelistedCookies(request).toString());
+		}
+	}
+
 	/**
-	 * adds selected cookies to the request
+	 * @deprecated  Use {@linkplain #getWhitelistedCookies(HttpServletRequest)} instead. adds
+	 *              selected cookies to the request
 	 *
-	 * @param   connection
-	 * @param   request
+	 * @param       connection
+	 * @param       request
 	 *
 	 * @return
 	 */
-	private HttpRequestBase addWhitelistedCookiesToRequest(
+	@Deprecated
+	private HttpRequestBase addLegacyWhitelistedCookiesToRequest(
 		HttpRequestBase    connection,
 		HttpServletRequest request
 	) {
 		if (getWhitelistedCookieNames().length > 0) {
-			final StringBuilder cookies = new StringBuilder();
-			for (final String cookieName : getWhitelistedCookieNames()) {
-				switch (getCookieNameMatchType()) {
-
-					case FULL :
-						appendCookie(cookies, WebUtils.getCookie(request, cookieName));
-						break;
-
-					case PREFIX :
-						for (
-							Cookie cookieStartingWithPrefix
-							: getCookiesByPrefix(request, cookieName)
-						) {
-							appendCookie(cookies, cookieStartingWithPrefix);
-						}
-						break;
-
-					default :
-						break;
-				}
-			}
-			connection.addHeader("Cookie", cookies.toString());
+			connection.addHeader("Cookie", getWhitelistedCookies(request).toString());
 		}
 		return connection;
+	}
+
+	private StringBuilder getWhitelistedCookies(final HttpServletRequest request) {
+		final StringBuilder cookies = new StringBuilder();
+		for (final String cookieName : getWhitelistedCookieNames()) {
+			switch (getCookieNameMatchType()) {
+
+				case FULL :
+					appendCookie(cookies, WebUtils.getCookie(request, cookieName));
+					break;
+
+				case PREFIX :
+					for (Cookie cookieStartingWithPrefix : getCookiesByPrefix(request, cookieName)) {
+						appendCookie(cookies, cookieStartingWithPrefix);
+					}
+					break;
+
+				default :
+					break;
+			}
+		}
+		return cookies;
 	}
 
 	/**
@@ -294,23 +394,41 @@ public abstract class RoutingHandler {
 	}
 
 	/**
-	 * simple implementation of routing request tracking
+	 * debug logging.
 	 *
 	 * @param  routingEndpoint  routing endpoint url
 	 * @param  requestSize      size of request in bytes
-	 * @param  responseSize     size of reponse in size
+	 * @param  responseEntity   logged responseEntity
 	 */
-	protected void trackRoutingRequest(
-		String routingEndpoint,
-		long   requestSize,
-		long   responseSize
-	) {
-		LOGGER.debug(
-			"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
-			routingEndpoint,
-			requestSize,
-			responseSize
-		);
+	protected void log(
+		final String				   routingEndpoint,
+		long						   requestSize,
+		final ResponseEntity<Resource> responseEntity
+	) throws IOException
+	{
+		final Resource responseBody = responseEntity.getBody();
+
+		if (logger.isDebugEnabled()) {
+			logger.debug("truncated responseEntity {}", responseEntity);
+			logger.debug(
+				"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
+				routingEndpoint,
+				requestSize,
+				responseBody != null ? responseBody.contentLength() : 0
+			);
+
+			logger.debug(
+				"Response to caller: Content Type {} | Status Code {}",
+				responseEntity.getHeaders().getContentType(),
+				responseEntity.getStatusCode()
+			);
+
+			byte[] responseBodyBytes = null;
+			if (responseBody != null) {
+				responseBodyBytes = IOUtils.toByteArray(responseBody.getInputStream());
+			}
+			logger.debug("Body:\n {}", Arrays.toString(responseBodyBytes));
+		}
 	}
 
 	/**
@@ -320,6 +438,7 @@ public abstract class RoutingHandler {
 		return DEFAULT_RETURN_VALUE;
 	}
 
+	@Deprecated
 	protected ProviderRequestMethod getRequestMethod() {
 		return ProviderRequestMethod.POST;
 	}
