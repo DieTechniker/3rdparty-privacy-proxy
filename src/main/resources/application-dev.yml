@@ -1,0 +1,5 @@
+assets:
+  fileLocation: '/tmp/3rdparty-privacy-proxy'
+logging:
+  level:
+    de.tk.opensource.privacyproxy: DEBUG
