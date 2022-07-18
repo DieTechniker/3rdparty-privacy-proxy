@@ -15,18 +15,3 @@ management:
   endpoint:
     health:
       enabled: true
----
-spring:
-  profiles: proxy
-http:
-  proxyHost:
-  proxyPort:
-  nonProxyHosts:
----
-spring:
-  profiles: dev
-assets:
-  fileLocation: '/tmp/3rdparty-privacy-proxy'
-logging:
-  level:
-    de.tk.opensource.privacyproxy: DEBUG
