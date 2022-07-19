@@ -4,8 +4,7 @@ on:
   push:
     branches:    
     - 'release/**'
-    - 'develop'
-    - 'generic-routing-handler'
+    - 'feature/**'
 
 jobs:
   build:
