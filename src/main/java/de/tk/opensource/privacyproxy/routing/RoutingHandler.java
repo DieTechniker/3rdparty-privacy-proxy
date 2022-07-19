@@ -103,7 +103,7 @@ public abstract class RoutingHandler {
 		try {
 			final RestTemplate restTemplate =
 				new RestTemplateBuilder(restTemplateProxyCustomizer).build();
-			this.logger.debug("Calling {}", uri);
+			logger.debug("Calling {}", uri);
 			final ResponseEntity<Resource> responseEntity =
 				restTemplate.exchange(uri, method, httpEntity, Resource.class);
 
