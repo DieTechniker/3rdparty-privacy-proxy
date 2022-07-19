@@ -1,15 +1,12 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.config;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +19,6 @@ import org.springframework.retry.RetryListener;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.listener.RetryListenerSupport;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.util.StringUtils;
 
 @Configuration
 @EnableCaching
@@ -34,18 +30,6 @@ public class PrivacyProxyConfig {
 	@Bean
 	public ConversionService conversionService() {
 		return new DefaultConversionService();
-	}
-
-	@Bean
-	public Proxy proxy(
-		@Value("${http.proxyHost:''}") String proxyHost,
-		@Value("${http.proxyPort:-1}") Integer proxyPort
-	) {
-		if (StringUtils.isEmpty(proxyHost) || proxyPort == -1) {
-			return Proxy.NO_PROXY;
-		} else {
-			return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-		}
 	}
 
 	@Bean
