@@ -66,7 +66,7 @@ public abstract class RoutingHandler {
 
 	private final ProxyHelper proxyHelper;
 
-	RoutingHandler(
+	public RoutingHandler(
 		RestTemplateProxyCustomizer restTemplateProxyCustomizer,
 		ProxyRoutePlanner			proxyRoutePlanner,
 		ProxyHelper					proxyHelper
