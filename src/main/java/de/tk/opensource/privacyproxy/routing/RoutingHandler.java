@@ -247,7 +247,10 @@ public abstract class RoutingHandler {
 		final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
 		whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
 		if (sourceHeaders.getContentType() != null) {
-			whitelistedResponseHeaders.add(HttpHeaders.CONTENT_TYPE, sourceHeaders.getContentType().toString());
+			whitelistedResponseHeaders.add(
+				HttpHeaders.CONTENT_TYPE,
+				sourceHeaders.getContentType().toString()
+			);
 		}
 
 		// add provider specific response headers
@@ -267,9 +270,6 @@ public abstract class RoutingHandler {
 		return createQueryString(filterBlacklistedData(params));
 	}
 
-	/**
-	 * creates a String from map
-	 */
 	private String createQueryString(final Map<String, String> params) {
 		final StringBuilder allowedQueryParams = new StringBuilder();
 		for (final Map.Entry<String, String> entry : params.entrySet()) {
@@ -283,9 +283,6 @@ public abstract class RoutingHandler {
 		return allowedQueryParams.toString();
 	}
 
-	/**
-	 * filter blacklisted entries from the map
-	 */
 	private Map<String, String> filterBlacklistedData(Map<String, String> data) {
 		for (final String blackListedParam : getBlacklistedQueryParams()) {
 			data.remove(blackListedParam);
@@ -301,7 +298,6 @@ public abstract class RoutingHandler {
 			}
 		}
 
-		// add additional headers
 		for (
 			final Map.Entry<String, String> header
 			: getAdditionalRequestHeaders(request).entrySet()
@@ -361,11 +357,6 @@ public abstract class RoutingHandler {
 		return cookies;
 	}
 
-	/**
-	 * Returns cookies with matching name prefix.
-	 *
-	 * @return  List of {@link Cookie}s or an empty list.
-	 */
 	private List<Cookie> getCookiesByPrefix(final HttpServletRequest request, final String prefix) {
 		final Cookie[] cookies = request.getCookies();
 		if (cookies != null && prefix != null) {
@@ -380,9 +371,6 @@ public abstract class RoutingHandler {
 		return Collections.emptyList();
 	}
 
-	/**
-	 * appends a cookie to the StringBuilder
-	 */
 	private void appendCookie(final StringBuilder builder, final Cookie cookie) {
 		if (cookie != null) {
 			if (builder.length() > 0) {
@@ -434,9 +422,6 @@ public abstract class RoutingHandler {
 		}
 	}
 
-	/**
-	 * request headers that should be transferred to the endpoint
-	 */
 	protected String[] getWhitelistedRequestHeaders() {
 		return DEFAULT_RETURN_VALUE;
 	}
