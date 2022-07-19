@@ -20,7 +20,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -110,7 +109,7 @@ public abstract class RoutingHandler {
 			final HttpHeaders responseHeaders = responseEntity.getHeaders();
 			final ResponseEntity<Resource> customResponseEntity =
 				ResponseEntity.status(responseEntity.getStatusCode()).headers(
-					getResponseHeaders(responseHeaders)
+					whitelistResponseHeaders(responseHeaders)
 				)
 				.body(responseEntity.getBody());
 
@@ -139,12 +138,12 @@ public abstract class RoutingHandler {
 		Map<String, String> data,
 		String				trackingEndpoint
 	) {
-		final CloseableHttpClient httpClient =
-			proxyHelper.getCloseableHttpClient(proxyRoutePlanner);
-		HttpRequestBase httpRequest;
-		try {
+		try(
+			final CloseableHttpClient httpClient =
+				proxyHelper.getCloseableHttpClient(proxyRoutePlanner)
+		) {
+			HttpRequestBase httpRequest;
 
-			// filter unwanted query params
 			final String queryString = filterQueryString(data);
 			final URI url =
 				new URI(trackingEndpoint + (!"".equals(queryString) ? "?" + queryString : ""));
@@ -155,11 +154,8 @@ public abstract class RoutingHandler {
 				httpRequest = new HttpGet(url);
 			}
 
-			// add required Cookies
 			addLegacyWhitelistedCookiesToRequest(httpRequest, request);
 
-			// add required headers
-			// add provider specific response headers
 			for (final String headerName : getWhitelistedRequestHeaders()) {
 				final String headerValue = request.getHeader(headerName);
 				if (headerValue != null) {
@@ -167,7 +163,6 @@ public abstract class RoutingHandler {
 				}
 			}
 
-			// add additional headers
 			for (
 				final Map.Entry<String, String> header
 				: getAdditionalRequestHeaders(request).entrySet()
@@ -177,25 +172,9 @@ public abstract class RoutingHandler {
 
 			logger.debug("Calling {}", httpRequest.getURI());
 
-			// send it
 			final HttpResponse response = httpClient.execute(httpRequest);
+			final HttpHeaders responseHeaders = getHttpHeaders(response);
 
-			// add response headers
-			final HttpHeaders responseHeaders =
-				getResponseHeaders(
-					new HttpHeaders(
-						new MultiValueMapAdapter<>(
-							Arrays.stream(response.getAllHeaders()).collect(
-								Collectors.toMap(
-									NameValuePair::getName,
-									e -> Collections.singletonList(e.getValue())
-								)
-							)
-						)
-					)
-				);
-
-			// reporting
 			logger.debug(
 				"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
 				trackingEndpoint,
@@ -203,7 +182,6 @@ public abstract class RoutingHandler {
 				response.getEntity() != null ? response.getEntity().getContentLength() : 0
 			);
 
-			// media type
 			MediaType mediaType = getResponseMediaType(response);
 
 			final int statusCode = response.getStatusLine().getStatusCode();
@@ -213,7 +191,6 @@ public abstract class RoutingHandler {
 				statusCode
 			);
 
-			// Get the response Body
 			byte[] responseBody = null;
 			if (response.getEntity() != null) {
 				responseBody = IOUtils.toByteArray(response.getEntity().getContent());
@@ -230,13 +207,24 @@ public abstract class RoutingHandler {
 				e
 			);
 			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
-		} finally {
-			try {
-				httpClient.close();
-			} catch (IOException e) {
-				logger.warn(e.getMessage(), e);
-			}
 		}
+	}
+
+	@Deprecated
+	private HttpHeaders getHttpHeaders(HttpResponse response) {
+
+		//J-
+		final Map<String, List<String>> headers = Arrays
+				.stream(response.getAllHeaders())
+				.collect(Collectors.toMap(
+								NameValuePair::getName, e -> Collections.singletonList(e.getValue())
+						)
+				);
+		//J+
+		final MultiValueMapAdapter<String, String> springHeaders =
+			new MultiValueMapAdapter<>(headers);
+
+		return whitelistResponseHeaders(new HttpHeaders(springHeaders));
 	}
 
 	private MediaType getResponseMediaType(HttpResponse response) {
@@ -250,7 +238,7 @@ public abstract class RoutingHandler {
 		return mediaType;
 	}
 
-	protected HttpHeaders getResponseHeaders(final HttpHeaders sourceHeaders) {
+	protected HttpHeaders whitelistResponseHeaders(final HttpHeaders sourceHeaders) {
 		final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
 		whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
 		if (sourceHeaders.getContentType() != null) {
@@ -260,7 +248,6 @@ public abstract class RoutingHandler {
 			);
 		}
 
-		// add provider specific response headers
 		for (final String headerName : getWhitelistedResponseHeaders()) {
 			final String headerValue = sourceHeaders.toSingleValueMap().get(headerName);
 			if (headerValue != null) {
@@ -345,20 +332,15 @@ public abstract class RoutingHandler {
 	private StringBuilder getWhitelistedCookies(final HttpServletRequest request) {
 		final StringBuilder cookies = new StringBuilder();
 		for (final String cookieName : getWhitelistedCookieNames()) {
-			switch (getCookieNameMatchType()) {
-
-				case FULL :
-					appendCookie(cookies, WebUtils.getCookie(request, cookieName));
-					break;
-
-				case PREFIX :
-					for (Cookie cookieStartingWithPrefix : getCookiesByPrefix(request, cookieName)) {
-						appendCookie(cookies, cookieStartingWithPrefix);
-					}
-					break;
-
-				default :
-					break;
+			final CookieNameMatchType cookieNameMatchType = getCookieNameMatchType();
+			if (cookieNameMatchType == CookieNameMatchType.FULL) {
+				appendCookie(cookies, WebUtils.getCookie(request, cookieName));
+			} else if (cookieNameMatchType == CookieNameMatchType.PREFIX) {
+				for (
+					final Cookie cookieStartingWithPrefix : getCookiesByPrefix(request, cookieName)
+				) {
+					appendCookie(cookies, cookieStartingWithPrefix);
+				}
 			}
 		}
 		return cookies;
@@ -433,6 +415,12 @@ public abstract class RoutingHandler {
 		return DEFAULT_RETURN_VALUE;
 	}
 
+	/**
+	 * @deprecated  because the {@linkplain #handleGenericRequestInternal(String, Map,
+	 *              HttpServletRequest, String, HttpMethod)} can handle both method types.
+	 *
+	 * @return
+	 */
 	@Deprecated
 	protected ProviderRequestMethod getRequestMethod() {
 		return ProviderRequestMethod.POST;

@@ -17,23 +17,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import static de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer.ROUTING_TIMEOUT_IN_SECS;
-
 @Component
 public class ProxyHelper {
 
+	public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
-
-	@Autowired
-	private Proxy proxy;
 
 	@Value("${http.nonProxyHosts:''}")
 	private String nonProxyHosts;
 
-	public ProxyHelper() {
+	private final Proxy proxy;
+
+	@Autowired
+	public ProxyHelper(Proxy proxy) {
+		this.proxy = proxy;
 	}
 
-	// Package protected constructor for unit tests
 	ProxyHelper(Proxy proxy, String nonProxyHosts) {
 		this.proxy = proxy;
 		this.nonProxyHosts = nonProxyHosts;
@@ -53,7 +52,7 @@ public class ProxyHelper {
 	public Proxy selectProxy(URL url) {
 
 		// Skip evaluation if no proxy is configured at all
-		if (Proxy.NO_PROXY.equals(proxy) || StringUtils.isEmpty(nonProxyHosts)) {
+		if (Proxy.NO_PROXY.equals(proxy) || !StringUtils.hasText(nonProxyHosts)) {
 			return proxy;
 		}
 
@@ -105,9 +104,9 @@ public class ProxyHelper {
 
 	public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
 		final RequestConfig requestConfig =
-			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_IN_SECS * 1000)
-			.setConnectionRequestTimeout(ROUTING_TIMEOUT_IN_SECS * 1000).setSocketTimeout(
-				ROUTING_TIMEOUT_IN_SECS * 1000
+			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
+			.setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
+				ROUTING_TIMEOUT_MILLISECONDS
 			)
 			.build();
 		return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(

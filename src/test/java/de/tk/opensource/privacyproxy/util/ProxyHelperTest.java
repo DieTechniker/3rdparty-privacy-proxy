@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.util;
 
@@ -46,79 +46,79 @@ public class ProxyHelperTest {
 
 	@Test
 	public void testDontMatchesEmptyPattern() {
-		assertEquals(false, ProxyHelper.matches("", ""));
-		assertEquals(false, ProxyHelper.matches("test", ""));
+		assertFalse(ProxyHelper.matches("", ""));
+		assertFalse(ProxyHelper.matches("test", ""));
 	}
 
 	@Test
 	public void testMatchesWildcardAny() {
-		assertEquals(true, ProxyHelper.matches("", "*"));
-		assertEquals(true, ProxyHelper.matches("test", "*"));
+		assertTrue(ProxyHelper.matches("", "*"));
+		assertTrue(ProxyHelper.matches("test", "*"));
 	}
 
 	@Test
 	public void testMatchesWildcardAfter() {
-		assertEquals(true, ProxyHelper.matches("test", "test*"));
-		assertEquals(true, ProxyHelper.matches("test", "tes*"));
-		assertEquals(true, ProxyHelper.matches("test", "t*"));
-		assertEquals(false, ProxyHelper.matches("test", "est*"));
+		assertTrue(ProxyHelper.matches("test", "test*"));
+		assertTrue(ProxyHelper.matches("test", "tes*"));
+		assertTrue(ProxyHelper.matches("test", "t*"));
+		assertFalse(ProxyHelper.matches("test", "est*"));
 	}
 
 	@Test
 	public void testMatchesWildcardBefore() {
-		assertEquals(true, ProxyHelper.matches("test", "*test"));
-		assertEquals(true, ProxyHelper.matches("test", "*est"));
-		assertEquals(true, ProxyHelper.matches("test", "*t"));
-		assertEquals(false, ProxyHelper.matches("test", "*tes"));
+		assertTrue(ProxyHelper.matches("test", "*test"));
+		assertTrue(ProxyHelper.matches("test", "*est"));
+		assertTrue(ProxyHelper.matches("test", "*t"));
+		assertFalse(ProxyHelper.matches("test", "*tes"));
 	}
 
 	@Test
 	public void testMatchesWildcardAtBeginAndEnd() {
-		assertEquals(true, ProxyHelper.matches("test", "**"));
-		assertEquals(true, ProxyHelper.matches("test", "*test*"));
-		assertEquals(true, ProxyHelper.matches("test", "*t*"));
-		assertEquals(true, ProxyHelper.matches("test", "*e*"));
-		assertEquals(true, ProxyHelper.matches("test", "*s*"));
-		assertEquals(true, ProxyHelper.matches("test", "*es*"));
-		assertEquals(true, ProxyHelper.matches("test", "*tes*"));
-		assertEquals(true, ProxyHelper.matches("test", "*est*"));
-		assertEquals(true, ProxyHelper.matches("test", "*te*"));
-		assertEquals(true, ProxyHelper.matches("test", "*st*"));
-		assertEquals(false, ProxyHelper.matches("test", "*se*"));
+		assertTrue(ProxyHelper.matches("test", "**"));
+		assertTrue(ProxyHelper.matches("test", "*test*"));
+		assertTrue(ProxyHelper.matches("test", "*t*"));
+		assertTrue(ProxyHelper.matches("test", "*e*"));
+		assertTrue(ProxyHelper.matches("test", "*s*"));
+		assertTrue(ProxyHelper.matches("test", "*es*"));
+		assertTrue(ProxyHelper.matches("test", "*tes*"));
+		assertTrue(ProxyHelper.matches("test", "*est*"));
+		assertTrue(ProxyHelper.matches("test", "*te*"));
+		assertTrue(ProxyHelper.matches("test", "*st*"));
+		assertFalse(ProxyHelper.matches("test", "*se*"));
 	}
 
 	@Test
 	public void testMatchesWithoutWildcard() {
-		assertEquals(true, ProxyHelper.matches("test", "test"));
-		assertEquals(false, ProxyHelper.matches("test", "est"));
-		assertEquals(false, ProxyHelper.matches("test", "tes"));
-		assertEquals(false, ProxyHelper.matches("test", "es"));
+		assertTrue(ProxyHelper.matches("test", "test"));
+		assertFalse(ProxyHelper.matches("test", "est"));
+		assertFalse(ProxyHelper.matches("test", "tes"));
+		assertFalse(ProxyHelper.matches("test", "es"));
 	}
 
 	@Test
 	public void testMatchesCaseSensitive() {
-		assertEquals(false, ProxyHelper.matches("test", "Test"));
-		assertEquals(false, ProxyHelper.matches("Test", "test"));
-		assertEquals(false, ProxyHelper.matches("test", "T*"));
-		assertEquals(false, ProxyHelper.matches("Test", "t*"));
-		assertEquals(false, ProxyHelper.matches("test", "*T"));
-		assertEquals(false, ProxyHelper.matches("tesT", "*t"));
+		assertFalse(ProxyHelper.matches("test", "Test"));
+		assertFalse(ProxyHelper.matches("Test", "test"));
+		assertFalse(ProxyHelper.matches("test", "T*"));
+		assertFalse(ProxyHelper.matches("Test", "t*"));
+		assertFalse(ProxyHelper.matches("test", "*T"));
+		assertFalse(ProxyHelper.matches("tesT", "*t"));
 	}
 
 	@Test
 	public void testContainingAsterisk() {
-		assertEquals(false, ProxyHelper.matches("test", "t*t"));
-		assertEquals(true, ProxyHelper.matches("t*t", "t*t"));
+		assertFalse(ProxyHelper.matches("test", "t*t"));
+		assertTrue(ProxyHelper.matches("t*t", "t*t"));
 	}
 
 	@Test
 	public void testRepeatingAsterisks() {
-		assertEquals(false, ProxyHelper.matches("test", "t**"));
-		assertEquals(false, ProxyHelper.matches("test", "**t"));
-		assertEquals(false, ProxyHelper.matches("test", "***"));
-		assertEquals(true, ProxyHelper.matches("t*t", "***"));
-		assertEquals(true, ProxyHelper.matches("t*t", "t**"));
-		assertEquals(true, ProxyHelper.matches("t*t", "**t"));
+		assertFalse(ProxyHelper.matches("test", "t**"));
+		assertFalse(ProxyHelper.matches("test", "**t"));
+		assertFalse(ProxyHelper.matches("test", "***"));
+		assertTrue(ProxyHelper.matches("t*t", "***"));
+		assertTrue(ProxyHelper.matches("t*t", "t**"));
+		assertTrue(ProxyHelper.matches("t*t", "**t"));
 	}
 }
 
