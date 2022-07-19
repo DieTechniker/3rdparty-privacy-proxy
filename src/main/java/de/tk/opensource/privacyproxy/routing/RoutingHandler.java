@@ -61,14 +61,21 @@ public abstract class RoutingHandler {
 
 	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
 
-	@Autowired
-	private RestTemplateProxyCustomizer restTemplateProxyCustomizer;
+	private final RestTemplateProxyCustomizer restTemplateProxyCustomizer;
 
-	@Autowired
-	private ProxyRoutePlanner proxyRoutePlanner;
+	private final ProxyRoutePlanner proxyRoutePlanner;
 
-	@Autowired
-	private ProxyHelper proxyHelper;
+	private final ProxyHelper proxyHelper;
+
+	RoutingHandler(
+		RestTemplateProxyCustomizer restTemplateProxyCustomizer,
+		ProxyRoutePlanner			proxyRoutePlanner,
+		ProxyHelper					proxyHelper
+	) {
+		this.restTemplateProxyCustomizer = restTemplateProxyCustomizer;
+		this.proxyRoutePlanner = proxyRoutePlanner;
+		this.proxyHelper = proxyHelper;
+	}
 
 	/**
 	 * Basic implementation for requests, which are routed through the privacy-proxy. It can be
