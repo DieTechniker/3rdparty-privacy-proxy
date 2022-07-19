@@ -11,18 +11,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ProxyHelperTest {
+class ProxyHelperTest {
 
 	Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(8080));
 
 	@Test
-	public void testNoExceptionsSelectProxy() throws MalformedURLException {
+	void testNoExceptionsSelectProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper = new ProxyHelper(proxy, "");
 		assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
 	}
 
 	@Test
-	public void testSelectProxy() throws MalformedURLException {
+	void testSelectProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper =
 			new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
 		assertSame(proxy, proxyHelper.selectProxy(new URL("http://some.external.url")));
@@ -34,7 +34,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testSelectNoProxy() throws MalformedURLException {
+	void testSelectNoProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper =
 			new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
 		assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://domain.tld")));
@@ -44,19 +44,19 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testDontMatchesEmptyPattern() {
+	void testDontMatchesEmptyPattern() {
 		assertFalse(ProxyHelper.matches("", ""));
 		assertFalse(ProxyHelper.matches("test", ""));
 	}
 
 	@Test
-	public void testMatchesWildcardAny() {
+	void testMatchesWildcardAny() {
 		assertTrue(ProxyHelper.matches("", "*"));
 		assertTrue(ProxyHelper.matches("test", "*"));
 	}
 
 	@Test
-	public void testMatchesWildcardAfter() {
+	void testMatchesWildcardAfter() {
 		assertTrue(ProxyHelper.matches("test", "test*"));
 		assertTrue(ProxyHelper.matches("test", "tes*"));
 		assertTrue(ProxyHelper.matches("test", "t*"));
@@ -64,7 +64,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testMatchesWildcardBefore() {
+	void testMatchesWildcardBefore() {
 		assertTrue(ProxyHelper.matches("test", "*test"));
 		assertTrue(ProxyHelper.matches("test", "*est"));
 		assertTrue(ProxyHelper.matches("test", "*t"));
@@ -72,7 +72,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testMatchesWildcardAtBeginAndEnd() {
+	void testMatchesWildcardAtBeginAndEnd() {
 		assertTrue(ProxyHelper.matches("test", "**"));
 		assertTrue(ProxyHelper.matches("test", "*test*"));
 		assertTrue(ProxyHelper.matches("test", "*t*"));
@@ -87,7 +87,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testMatchesWithoutWildcard() {
+	void testMatchesWithoutWildcard() {
 		assertTrue(ProxyHelper.matches("test", "test"));
 		assertFalse(ProxyHelper.matches("test", "est"));
 		assertFalse(ProxyHelper.matches("test", "tes"));
@@ -95,7 +95,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testMatchesCaseSensitive() {
+	void testMatchesCaseSensitive() {
 		assertFalse(ProxyHelper.matches("test", "Test"));
 		assertFalse(ProxyHelper.matches("Test", "test"));
 		assertFalse(ProxyHelper.matches("test", "T*"));
@@ -105,13 +105,13 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testContainingAsterisk() {
+	void testContainingAsterisk() {
 		assertFalse(ProxyHelper.matches("test", "t*t"));
 		assertTrue(ProxyHelper.matches("t*t", "t*t"));
 	}
 
 	@Test
-	public void testRepeatingAsterisks() {
+	void testRepeatingAsterisks() {
 		assertFalse(ProxyHelper.matches("test", "t**"));
 		assertFalse(ProxyHelper.matches("test", "**t"));
 		assertFalse(ProxyHelper.matches("test", "***"));

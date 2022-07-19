@@ -43,7 +43,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 @SpringBootTest(classes = TestConfig.class)
-public class RoutingHandlerSpringTest {
+class RoutingHandlerSpringTest {
 
 	private MockRestServiceServer mockServer;
 
@@ -67,7 +67,7 @@ public class RoutingHandlerSpringTest {
 	}
 
 	@Test
-	public void testHandleGenericRequestInternalPost() throws URISyntaxException, IOException {
+	void testHandleGenericRequestInternalPost() throws URISyntaxException, IOException {
 		final String responseBodyString = "[1,2,3,4,5,6]";
 		final Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("id", "1234");
@@ -102,7 +102,7 @@ public class RoutingHandlerSpringTest {
 	}
 
 	@Test
-	public void testHandleGenericRequestInternalGet() throws URISyntaxException, IOException {
+	void testHandleGenericRequestInternalGet() throws URISyntaxException, IOException {
 		final String responseBodyString = "[1,2,3,4,5,6]";
 		final Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("id", "1234");
@@ -137,7 +137,7 @@ public class RoutingHandlerSpringTest {
 	}
 
 	@Test
-	public void testHandleGenericRequestInternalForbidden() throws URISyntaxException, IOException {
+	void testHandleGenericRequestInternalForbidden() throws URISyntaxException, IOException {
 		final Map<String, String> queryParams = new HashMap<>();
 		queryParams.put("id", "1234");
 		queryParams.put("WTX", "XYZ");

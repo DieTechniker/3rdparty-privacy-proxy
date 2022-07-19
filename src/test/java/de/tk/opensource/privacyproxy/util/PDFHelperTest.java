@@ -11,9 +11,9 @@ import org.springframework.core.io.ClassPathResource;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PDFHelperTest {
+class PDFHelperTest {
 	@Test
-	public void testPdfWithBomMarker() throws IOException {
+	void testPdfWithBomMarker() throws IOException {
 		ClassPathResource classPathResource =
 			new ClassPathResource("testPdfs/pdfWithBomMarker.pdf");
 		byte[] bytes = IOUtils.toByteArray(classPathResource.getInputStream());
@@ -21,14 +21,14 @@ public class PDFHelperTest {
 	}
 
 	@Test
-	public void testStandardPdf() throws IOException {
+	void testStandardPdf() throws IOException {
 		ClassPathResource classPathResource = new ClassPathResource("testPdfs/testPdf.pdf");
 		byte[] bytes = IOUtils.toByteArray(classPathResource.getInputStream());
 		assertTrue(PDFHelper.isPdf(bytes));
 	}
 
 	@Test
-	public void testCorruptPdf() throws IOException {
+	void testCorruptPdf() throws IOException {
 		ClassPathResource classPathResource =
 			new ClassPathResource("testPdfs/shellBinaryAsPdf.pdf");
 		byte[] bytes = IOUtils.toByteArray(classPathResource.getInputStream());

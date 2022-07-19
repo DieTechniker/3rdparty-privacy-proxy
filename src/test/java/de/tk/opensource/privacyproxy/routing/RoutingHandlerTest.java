@@ -19,10 +19,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RoutingHandlerTest {
+class RoutingHandlerTest {
 
 	@Test
-	public void testQueryString() {
+	void testQueryString() {
 		Map<String, String> parameter = new LinkedHashMap<>();
 		parameter.put("one", "parameter1");
 		parameter.put("two", "some, special chars?");
@@ -38,7 +38,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testQueryStringWithoutEncoding() {
+	void testQueryStringWithoutEncoding() {
 		Map<String, String> parameter = new LinkedHashMap<>();
 		parameter.put("param", "value, test");
 
@@ -54,7 +54,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testQueryStringFiltered() {
+	void testQueryStringFiltered() {
 		Map<String, String> parameter = new LinkedHashMap<>();
 		parameter.put("restricted", "hidden value");
 		parameter.put("param", "some value");
@@ -71,7 +71,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testWhitelistResponseHeaders() {
+	void testWhitelistResponseHeaders() {
 		final RoutingHandler handler =
 			new RoutingHandler(null, null, null) {
 				@Override
@@ -98,7 +98,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testGetRequestHeaders() {
+	void testGetRequestHeaders() {
 		final RoutingHandler handler =
 			new RoutingHandler(null, null, null) {
 				@Override
@@ -139,7 +139,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testAddWhitelistedCookiesByPrefix() {
+	void testAddWhitelistedCookiesByPrefix() {
 		final RoutingHandler handler =
 			new RoutingHandler(null, null, null) {
 				@Override
@@ -170,7 +170,7 @@ public class RoutingHandlerTest {
 	}
 
 	@Test
-	public void testAddWhitelistedCookies() {
+	void testAddWhitelistedCookies() {
 		final RoutingHandler handler =
 			new RoutingHandler(null, null, null) {
 				@Override
