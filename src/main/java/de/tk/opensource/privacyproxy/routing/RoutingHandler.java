@@ -60,18 +60,18 @@ public abstract class RoutingHandler {
 
 	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
 
-	private final RestTemplateProxyCustomizer restTemplateProxyCustomizer;
-
 	private final ProxyRoutePlanner proxyRoutePlanner;
 
 	private final ProxyHelper proxyHelper;
 
+	private final RestTemplate restTemplate;
+
 	public RoutingHandler(
-		RestTemplateProxyCustomizer restTemplateProxyCustomizer,
-		ProxyRoutePlanner			proxyRoutePlanner,
-		ProxyHelper					proxyHelper
+		RestTemplate	  restTemplate,
+		ProxyRoutePlanner proxyRoutePlanner,
+		ProxyHelper		  proxyHelper
 	) {
-		this.restTemplateProxyCustomizer = restTemplateProxyCustomizer;
+		this.restTemplate = restTemplate;
 		this.proxyRoutePlanner = proxyRoutePlanner;
 		this.proxyHelper = proxyHelper;
 	}
@@ -94,14 +94,15 @@ public abstract class RoutingHandler {
 			UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
 			.toUri();
 
-		final HttpHeaders headers = new HttpHeaders();
-		addHeaders(request, headers);
+		final HttpHeaders headers = getRequestHeaders(request);
 		addWhitelistedCookies(request, headers);
 
-		final HttpEntity<String> httpEntity = new HttpEntity<>(body, headers);
+		if (method == HttpMethod.GET && body != null) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+		final HttpEntity<String> httpEntity =
+			body != null ? new HttpEntity<>(body, headers) : new HttpEntity<>(headers);
 		try {
-			final RestTemplate restTemplate =
-				new RestTemplateBuilder(restTemplateProxyCustomizer).build();
 			logger.debug("Calling {} with method {}", uri, method);
 			final ResponseEntity<Resource> responseEntity =
 				restTemplate.exchange(uri, method, httpEntity, Resource.class);
@@ -227,6 +228,7 @@ public abstract class RoutingHandler {
 		return whitelistResponseHeaders(new HttpHeaders(springHeaders));
 	}
 
+	@Deprecated
 	private MediaType getResponseMediaType(HttpResponse response) {
 		MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
 		if (response.getEntity() != null) {
@@ -284,7 +286,8 @@ public abstract class RoutingHandler {
 		return data;
 	}
 
-	private void addHeaders(HttpServletRequest request, HttpHeaders headers) {
+	HttpHeaders getRequestHeaders(final HttpServletRequest request) {
+		final HttpHeaders headers = new HttpHeaders();
 		for (final String headerName : getWhitelistedRequestHeaders()) {
 			final String headerValue = request.getHeader(headerName);
 			if (headerValue != null) {
@@ -298,12 +301,10 @@ public abstract class RoutingHandler {
 		) {
 			headers.add(header.getKey(), header.getValue());
 		}
+		return headers;
 	}
 
-	private void addWhitelistedCookies(
-		final HttpServletRequest request,
-		final HttpHeaders		 headers
-	) {
+	void addWhitelistedCookies(final HttpServletRequest request, final HttpHeaders headers) {
 		if (getWhitelistedCookieNames().length > 0) {
 			headers.add("Cookie", getWhitelistedCookies(request).toString());
 		}
@@ -391,8 +392,8 @@ public abstract class RoutingHandler {
 		final Resource responseBody = responseEntity.getBody();
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("request body {}", body);
-			logger.debug("truncated responseEntity {}", responseEntity);
+			logger.debug("Request body was: {}", body);
+			logger.debug("Truncated responseEntity: {}", responseEntity);
 			logger.debug(
 				"Route request to 3rd party. Url={}, query bytes sent={}, bytes received={}",
 				routingEndpoint,
@@ -410,7 +411,7 @@ public abstract class RoutingHandler {
 			if (responseBody != null) {
 				responseBodyBytes = IOUtils.toByteArray(responseBody.getInputStream());
 			}
-			logger.debug("Body:\n {}", Arrays.toString(responseBodyBytes));
+			logger.debug("Response body: {}", Arrays.toString(responseBodyBytes));
 		}
 	}
 
