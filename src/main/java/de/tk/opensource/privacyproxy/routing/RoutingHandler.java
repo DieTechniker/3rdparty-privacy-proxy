@@ -102,7 +102,7 @@ public abstract class RoutingHandler {
 		try {
 			final RestTemplate restTemplate =
 				new RestTemplateBuilder(restTemplateProxyCustomizer).build();
-			logger.debug("Calling {}", uri);
+			logger.debug("Calling {} with method {}", uri, method);
 			final ResponseEntity<Resource> responseEntity =
 				restTemplate.exchange(uri, method, httpEntity, Resource.class);
 
@@ -113,7 +113,7 @@ public abstract class RoutingHandler {
 				)
 				.body(responseEntity.getBody());
 
-			log(targetEndpoint, queryString.getBytes().length, customResponseEntity);
+			log(targetEndpoint, queryString.getBytes().length, customResponseEntity, body);
 
 			return customResponseEntity;
 		} catch (Exception e) {
@@ -379,19 +379,22 @@ public abstract class RoutingHandler {
 	 * @param  routingEndpoint  routing endpoint url
 	 * @param  requestSize      size of request in bytes
 	 * @param  responseEntity   logged responseEntity
+	 * @param  body
 	 */
 	protected void log(
 		final String				   routingEndpoint,
 		long						   requestSize,
-		final ResponseEntity<Resource> responseEntity
+		final ResponseEntity<Resource> responseEntity,
+		final String				   body
 	) throws IOException
 	{
 		final Resource responseBody = responseEntity.getBody();
 
 		if (logger.isDebugEnabled()) {
+			logger.debug("request body {}", body);
 			logger.debug("truncated responseEntity {}", responseEntity);
 			logger.debug(
-				"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
+				"Route request to 3rd party. Url={}, query bytes sent={}, bytes received={}",
 				routingEndpoint,
 				requestSize,
 				responseBody != null ? responseBody.contentLength() : 0
