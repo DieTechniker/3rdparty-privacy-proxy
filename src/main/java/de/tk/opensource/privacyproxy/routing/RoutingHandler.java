@@ -20,13 +20,13 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.WebUtils;
@@ -37,7 +37,6 @@ import de.tk.opensource.privacyproxy.config.UrlPattern;
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
 import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import de.tk.opensource.privacyproxy.util.RequestUtils;
-import de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer;
 
 /**
  * This component will allow you to take back control over information being sent to 3rd Party
@@ -56,6 +55,8 @@ import de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer;
 @RequestMapping(value = UrlPattern.Contexts.PROXY)
 public abstract class RoutingHandler {
 
+	public static final String EXCEPTION_PROXY_MESSAGE =
+		"Failed to proxy request. Endpoint: %s, Error: %s";
 	protected final Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
@@ -117,11 +118,17 @@ public abstract class RoutingHandler {
 			log(targetEndpoint, queryString.getBytes().length, customResponseEntity, body);
 
 			return customResponseEntity;
-		} catch (Exception e) {
+		} catch (HttpStatusCodeException e) {
 			logger.warn(
-				"Failed to proxy request. Endpoint: " + targetEndpoint + ", Error: "
-				+ e.getMessage(),
+				String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, e.getMessage())
+				+ ", with status code: " + e.getStatusCode(),
 				e
+			);
+			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
+		} catch (IOException ee) {
+			logger.warn(
+				String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, ee.getMessage()),
+				ee
 			);
 			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
 		}
