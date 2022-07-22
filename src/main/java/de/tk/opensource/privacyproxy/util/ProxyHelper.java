@@ -1,10 +1,5 @@
 package de.tk.opensource.privacyproxy.util;
 
-import java.net.Proxy;
-import java.net.URL;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -12,93 +7,96 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import java.net.Proxy;
+import java.net.URL;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 public class ProxyHelper {
 
-	public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
+    public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-	private final Proxy proxy;
-	private final String nonProxyHosts;
+    private final Proxy proxy;
+    private final String nonProxyHosts;
 
-	public ProxyHelper(Proxy proxy, String nonProxyHosts) {
-		this.proxy = proxy;
-		this.nonProxyHosts = nonProxyHosts;
-	}
+    public ProxyHelper(Proxy proxy, String nonProxyHosts) {
+        this.proxy = proxy;
+        this.nonProxyHosts = nonProxyHosts;
+    }
 
-	/**
-	 * Evaluates a list of hosts that should be reached directly, bypassing the proxy. This list is
-	 * configured using the system property 'http.nonProxyHosts'. The list of patterns is separated
-	 * by '|'. Any host matching one of these patterns will be reached through a direct connection
-	 * instead of through a proxy.
-	 *
-	 * @param   url
-	 *
-	 * @return  the configured {@link Proxy} instance or {@link Proxy#NO_PROXY} when the hostname is
-	 *          excluded.
-	 */
-	public Proxy selectProxy(URL url) {
+    /**
+     * Evaluates if a host should be reached directly, bypassing the proxy. The pattern may start or
+     * end with a '*' for wildcards.
+     *
+     * @param hostname
+     * @param pattern
+     * @return true if hostname matches the given pattern.
+     */
+    public static boolean matches(String hostname, String pattern) {
 
-		// Skip evaluation if no proxy is configured at all
-		if (Proxy.NO_PROXY.equals(proxy) || !StringUtils.hasText(nonProxyHosts)) {
-			return proxy;
-		}
+        if (pattern.isEmpty()) {
+            return false;
+        }
 
-		// The list of excluded host patterns is separated by '|'.
-		Stream<String> excluded = Pattern.compile(Pattern.quote("|")).splitAsStream(nonProxyHosts);
+        if (pattern.equals("*")) {
+            return true;
+        }
 
-		String hostname = url.getHost();
-		boolean isExcluded = excluded.anyMatch(pattern -> matches(hostname, pattern.trim()));
+        if (pattern.startsWith("*")) {
 
-		Proxy selection = isExcluded ? Proxy.NO_PROXY : proxy;
-		LOGGER.debug("Using {} for {} ({})", selection, hostname, nonProxyHosts);
-		return selection;
-	}
+            if (pattern.endsWith("*") && pattern.length() > 1) {
+                return hostname.contains(pattern.substring(1, pattern.length() - 1));
+            }
 
-	/**
-	 * Evaluates if a host should be reached directly, bypassing the proxy. The pattern may start or
-	 * end with a '*' for wildcards.
-	 *
-	 * @param   hostname
-	 * @param   pattern
-	 *
-	 * @return  true if hostname matches the given pattern.
-	 */
-	public static boolean matches(String hostname, String pattern) {
+            return hostname.endsWith(pattern.substring(1));
+        }
 
-		if (pattern.isEmpty()) {
-			return false;
-		}
+        if (pattern.endsWith("*")) {
+            return hostname.startsWith(pattern.substring(0, pattern.length() - 1));
+        }
 
-		if (pattern.equals("*")) {
-			return true;
-		}
+        return pattern.equals(hostname);
+    }
 
-		if (pattern.startsWith("*")) {
+    /**
+     * Evaluates a list of hosts that should be reached directly, bypassing the proxy. This list is
+     * configured using the system property 'http.nonProxyHosts'. The list of patterns is separated
+     * by '|'. Any host matching one of these patterns will be reached through a direct connection
+     * instead of through a proxy.
+     *
+     * @param url
+     * @return the configured {@link Proxy} instance or {@link Proxy#NO_PROXY} when the hostname is
+     * excluded.
+     */
+    public Proxy selectProxy(URL url) {
 
-			if (pattern.endsWith("*") && pattern.length() > 1) {
-				return hostname.contains(pattern.substring(1, pattern.length() - 1));
-			}
+        // Skip evaluation if no proxy is configured at all
+        if (Proxy.NO_PROXY.equals(proxy) || !StringUtils.hasText(nonProxyHosts)) {
+            return proxy;
+        }
 
-			return hostname.endsWith(pattern.substring(1));
-		}
+        // The list of excluded host patterns is separated by '|'.
+        Stream<String> excluded = Pattern.compile(Pattern.quote("|")).splitAsStream(nonProxyHosts);
 
-		if (pattern.endsWith("*")) {
-			return hostname.startsWith(pattern.substring(0, pattern.length() - 1));
-		}
+        String hostname = url.getHost();
+        boolean isExcluded = excluded.anyMatch(pattern -> matches(hostname, pattern.trim()));
 
-		return pattern.equals(hostname);
-	}
+        Proxy selection = isExcluded ? Proxy.NO_PROXY : proxy;
+        LOGGER.debug("Using {} for {} ({})", selection, hostname, nonProxyHosts);
+        return selection;
+    }
 
-	public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
-		final RequestConfig requestConfig =
-			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
-			.setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
-				ROUTING_TIMEOUT_MILLISECONDS
-			)
-			.build();
-		return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
-			proxyRoutePlanner.getRoutePlanner()
-		)
-		.build();
-	}
+    public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
+        final RequestConfig requestConfig =
+                RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
+                        .setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
+                                ROUTING_TIMEOUT_MILLISECONDS
+                        )
+                        .build();
+        return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
+                        proxyRoutePlanner.getRoutePlanner()
+                )
+                .build();
+    }
 }

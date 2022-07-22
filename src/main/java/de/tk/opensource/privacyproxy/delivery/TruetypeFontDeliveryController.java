@@ -12,21 +12,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class TruetypeFontDeliveryController extends AssetDeliveryController {
 
-	/**
-	 * Sets up cachegroup as well as the URL mapping under which this content should be accessible.
-	 */
-	@Cacheable(
-		cacheNames = "ttf",
-		key = "#provider + #font"
-	)
-	@GetMapping(
-		value = "/{provider:[a-zA-Z\\-]+$}/{font:[a-zA-Z0-9\\.\\-\\_]+\\.ttf$}",
-		produces = "font/ttf"
-	)
-	public ResponseEntity getFont(
-		@PathVariable("provider") String provider,
-		@PathVariable("font") String font
-	) {
-		return super.getAssetInternal(provider, font);
-	}
+    /**
+     * Sets up cachegroup as well as the URL mapping under which this content should be accessible.
+     */
+    @Cacheable(
+            cacheNames = "ttf",
+            key = "#provider + #font"
+    )
+    @GetMapping(
+            value = "/{provider:[a-zA-Z\\-]+$}/{font:[a-zA-Z0-9\\.\\-\\_]+\\.ttf$}",
+            produces = "font/ttf"
+    )
+    public ResponseEntity getFont(
+            @PathVariable("provider") String provider,
+            @PathVariable("font") String font
+    ) {
+        return super.getAssetInternal(provider, font);
+    }
 }

@@ -1,13 +1,11 @@
 package de.tk.opensource.privacyproxy.routing;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
+import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
+import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
+import de.tk.opensource.privacyproxy.config.UrlPattern;
+import de.tk.opensource.privacyproxy.util.ProxyHelper;
+import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
+import de.tk.opensource.privacyproxy.util.RequestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -29,12 +27,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.WebUtils;
 
-import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
-import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
-import de.tk.opensource.privacyproxy.config.UrlPattern;
-import de.tk.opensource.privacyproxy.util.ProxyHelper;
-import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
-import de.tk.opensource.privacyproxy.util.RequestUtils;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This component will allow you to take back control over information being sent to 3rd Party
@@ -53,434 +51,426 @@ import de.tk.opensource.privacyproxy.util.RequestUtils;
 @RequestMapping(value = UrlPattern.Contexts.PROXY)
 public abstract class RoutingHandler {
 
-	public static final String EXCEPTION_PROXY_MESSAGE =
-		"Failed to proxy request. Endpoint: %s, Error: %s";
-	protected final Logger logger = LoggerFactory.getLogger(getClass());
+    public static final String EXCEPTION_PROXY_MESSAGE =
+            "Failed to proxy request. Endpoint: %s, Error: %s";
+    private static final String[] DEFAULT_RETURN_VALUE = new String[0];
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    private final ProxyRoutePlanner proxyRoutePlanner;
 
-	private static final String[] DEFAULT_RETURN_VALUE = new String[0];
+    private final ProxyHelper proxyHelper;
 
-	private final ProxyRoutePlanner proxyRoutePlanner;
+    private final RestTemplate restTemplate;
 
-	private final ProxyHelper proxyHelper;
+    public RoutingHandler(
+            RestTemplate restTemplate,
+            ProxyRoutePlanner proxyRoutePlanner,
+            ProxyHelper proxyHelper
+    ) {
+        this.restTemplate = restTemplate;
+        this.proxyRoutePlanner = proxyRoutePlanner;
+        this.proxyHelper = proxyHelper;
+    }
 
-	private final RestTemplate restTemplate;
+    /**
+     * Basic implementation for requests, which are routed through the privacy-proxy. It can be
+     * configured by overriding certain methods. Every routing endpoint must have a dedicated
+     * specific handler.
+     */
+    public ResponseEntity<Resource> handleGenericRequestInternal(
+            final String targetEndpoint,
+            final Map<String, String> queryStrings,
+            final HttpServletRequest request,
+            @Nullable final String body,
+            final HttpMethod method
+    ) {
+        final String queryString = filterQueryString(queryStrings);
+        final URI uri =
+                UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
+                        .toUri();
 
-	public RoutingHandler(
-		RestTemplate	  restTemplate,
-		ProxyRoutePlanner proxyRoutePlanner,
-		ProxyHelper		  proxyHelper
-	) {
-		this.restTemplate = restTemplate;
-		this.proxyRoutePlanner = proxyRoutePlanner;
-		this.proxyHelper = proxyHelper;
-	}
+        final HttpHeaders headers = getRequestHeaders(request);
+        addWhitelistedCookies(request, headers);
 
-	/**
-	 * Basic implementation for requests, which are routed through the privacy-proxy. It can be
-	 * configured by overriding certain methods. Every routing endpoint must have a dedicated
-	 * specific handler.
-	 */
-	public ResponseEntity<Resource> handleGenericRequestInternal(
-		final String			  targetEndpoint,
-		final Map<String, String> queryStrings,
-		final HttpServletRequest  request,
-		@Nullable
-		final String			  body,
-		final HttpMethod		  method
-	) {
-		final String queryString = filterQueryString(queryStrings);
-		final URI uri =
-			UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
-			.toUri();
+        if (method == HttpMethod.GET && body != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        final HttpEntity<String> httpEntity =
+                body != null ? new HttpEntity<>(body, headers) : new HttpEntity<>(headers);
+        try {
+            logger.debug("Calling {} with method {}", uri, method);
+            final ResponseEntity<Resource> responseEntity =
+                    restTemplate.exchange(uri, method, httpEntity, Resource.class);
 
-		final HttpHeaders headers = getRequestHeaders(request);
-		addWhitelistedCookies(request, headers);
+            final HttpHeaders responseHeaders = responseEntity.getHeaders();
+            final ResponseEntity<Resource> customResponseEntity =
+                    ResponseEntity.status(responseEntity.getStatusCode()).headers(
+                                    whitelistResponseHeaders(responseHeaders)
+                            )
+                            .body(responseEntity.getBody());
 
-		if (method == HttpMethod.GET && body != null) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-		}
-		final HttpEntity<String> httpEntity =
-			body != null ? new HttpEntity<>(body, headers) : new HttpEntity<>(headers);
-		try {
-			logger.debug("Calling {} with method {}", uri, method);
-			final ResponseEntity<Resource> responseEntity =
-				restTemplate.exchange(uri, method, httpEntity, Resource.class);
+            log(targetEndpoint, queryString.getBytes().length, customResponseEntity, body);
 
-			final HttpHeaders responseHeaders = responseEntity.getHeaders();
-			final ResponseEntity<Resource> customResponseEntity =
-				ResponseEntity.status(responseEntity.getStatusCode()).headers(
-					whitelistResponseHeaders(responseHeaders)
-				)
-				.body(responseEntity.getBody());
+            return customResponseEntity;
+        } catch (HttpStatusCodeException e) {
+            logger.warn(
+                    String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, e.getMessage())
+                            + ", with status code: " + e.getStatusCode(),
+                    e
+            );
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
+        } catch (IOException ee) {
+            logger.warn(
+                    String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, ee.getMessage()),
+                    ee
+            );
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
+        }
+    }
 
-			log(targetEndpoint, queryString.getBytes().length, customResponseEntity, body);
+    /**
+     * @deprecated Use {@linkplain #handleGenericRequestInternal(String, Map, HttpServletRequest,
+     * String, HttpMethod)} instead. Basic implementation for requests, which are
+     * routed through the privacy-proxy. It can be configured by overriding certain
+     * methods. Every routing endpoint must have a dedicated specific handler.
+     */
+    @Deprecated
+    public ResponseEntity<Object> handlePostInternal(
+            HttpServletRequest request,
+            Map<String, String> data,
+            String trackingEndpoint
+    ) {
+        try (
+                final CloseableHttpClient httpClient =
+                        proxyHelper.getCloseableHttpClient(proxyRoutePlanner)
+        ) {
+            HttpRequestBase httpRequest;
 
-			return customResponseEntity;
-		} catch (HttpStatusCodeException e) {
-			logger.warn(
-				String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, e.getMessage())
-				+ ", with status code: " + e.getStatusCode(),
-				e
-			);
-			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
-		} catch (IOException ee) {
-			logger.warn(
-				String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, ee.getMessage()),
-				ee
-			);
-			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
-		}
-	}
+            final String queryString = filterQueryString(data);
+            final URI url =
+                    new URI(trackingEndpoint + (!"".equals(queryString) ? "?" + queryString : ""));
 
-	/**
-	 * @deprecated  Use {@linkplain #handleGenericRequestInternal(String, Map, HttpServletRequest,
-	 *              String, HttpMethod)} instead. Basic implementation for requests, which are
-	 *              routed through the privacy-proxy. It can be configured by overriding certain
-	 *              methods. Every routing endpoint must have a dedicated specific handler.
-	 */
-	@Deprecated
-	public ResponseEntity<Object> handlePostInternal(
-		HttpServletRequest  request,
-		Map<String, String> data,
-		String				trackingEndpoint
-	) {
-		try(
-			final CloseableHttpClient httpClient =
-				proxyHelper.getCloseableHttpClient(proxyRoutePlanner)
-		) {
-			HttpRequestBase httpRequest;
+            if (getRequestMethod() == ProviderRequestMethod.POST) {
+                httpRequest = new HttpPost(url);
+            } else {
+                httpRequest = new HttpGet(url);
+            }
 
-			final String queryString = filterQueryString(data);
-			final URI url =
-				new URI(trackingEndpoint + (!"".equals(queryString) ? "?" + queryString : ""));
+            addLegacyWhitelistedCookiesToRequest(httpRequest, request);
 
-			if (getRequestMethod() == ProviderRequestMethod.POST) {
-				httpRequest = new HttpPost(url);
-			} else {
-				httpRequest = new HttpGet(url);
-			}
+            for (final String headerName : getWhitelistedRequestHeaders()) {
+                final String headerValue = request.getHeader(headerName);
+                if (headerValue != null) {
+                    httpRequest.addHeader(headerName, headerValue);
+                }
+            }
 
-			addLegacyWhitelistedCookiesToRequest(httpRequest, request);
+            for (
+                    final Map.Entry<String, String> header
+                    : getAdditionalRequestHeaders(request).entrySet()
+            ) {
+                httpRequest.addHeader(header.getKey(), header.getValue());
+            }
 
-			for (final String headerName : getWhitelistedRequestHeaders()) {
-				final String headerValue = request.getHeader(headerName);
-				if (headerValue != null) {
-					httpRequest.addHeader(headerName, headerValue);
-				}
-			}
+            logger.debug("Calling {}", httpRequest.getURI());
 
-			for (
-				final Map.Entry<String, String> header
-				: getAdditionalRequestHeaders(request).entrySet()
-			) {
-				httpRequest.addHeader(header.getKey(), header.getValue());
-			}
+            final HttpResponse response = httpClient.execute(httpRequest);
+            final HttpHeaders responseHeaders = getHttpHeaders(response);
 
-			logger.debug("Calling {}", httpRequest.getURI());
+            logger.debug(
+                    "Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
+                    trackingEndpoint,
+                    queryString.getBytes().length,
+                    response.getEntity() != null ? response.getEntity().getContentLength() : 0
+            );
 
-			final HttpResponse response = httpClient.execute(httpRequest);
-			final HttpHeaders responseHeaders = getHttpHeaders(response);
+            MediaType mediaType = getResponseMediaType(response);
 
-			logger.debug(
-				"Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
-				trackingEndpoint,
-				queryString.getBytes().length,
-				response.getEntity() != null ? response.getEntity().getContentLength() : 0
-			);
+            final int statusCode = response.getStatusLine().getStatusCode();
+            logger.debug(
+                    "Response to caller: Content Type {} | Status Code {}",
+                    mediaType.toString(),
+                    statusCode
+            );
 
-			MediaType mediaType = getResponseMediaType(response);
+            byte[] responseBody = null;
+            if (response.getEntity() != null) {
+                responseBody = IOUtils.toByteArray(response.getEntity().getContent());
+            }
+            logger.debug("Body:\n{}", Arrays.toString(responseBody));
 
-			final int statusCode = response.getStatusLine().getStatusCode();
-			logger.debug(
-				"Response to caller: Content Type {} | Status Code {}",
-				mediaType.toString(),
-				statusCode
-			);
+            return ResponseEntity.status(statusCode).headers(responseHeaders).contentType(mediaType)
+                    .body(responseBody);
 
-			byte[] responseBody = null;
-			if (response.getEntity() != null) {
-				responseBody = IOUtils.toByteArray(response.getEntity().getContent());
-			}
-			logger.debug("Body:\n{}", Arrays.toString(responseBody));
+        } catch (Exception e) {
+            logger.warn(
+                    "Failed to proxy request. Endpoint: " + trackingEndpoint + ", Error: "
+                            + e.getMessage(),
+                    e
+            );
+            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
+        }
+    }
 
-			return ResponseEntity.status(statusCode).headers(responseHeaders).contentType(mediaType)
-			.body(responseBody);
+    @Deprecated
+    private HttpHeaders getHttpHeaders(HttpResponse response) {
 
-		} catch (Exception e) {
-			logger.warn(
-				"Failed to proxy request. Endpoint: " + trackingEndpoint + ", Error: "
-				+ e.getMessage(),
-				e
-			);
-			return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
-		}
-	}
+        //J-
+        final Map<String, List<String>> headers = Arrays
+                .stream(response.getAllHeaders())
+                .collect(Collectors.toMap(
+                                NameValuePair::getName, e -> Collections.singletonList(e.getValue())
+                        )
+                );
+        //J+
+        final MultiValueMapAdapter<String, String> springHeaders =
+                new MultiValueMapAdapter<>(headers);
 
-	@Deprecated
-	private HttpHeaders getHttpHeaders(HttpResponse response) {
+        return whitelistResponseHeaders(new HttpHeaders(springHeaders));
+    }
 
-		//J-
-		final Map<String, List<String>> headers = Arrays
-				.stream(response.getAllHeaders())
-				.collect(Collectors.toMap(
-								NameValuePair::getName, e -> Collections.singletonList(e.getValue())
-						)
-				);
-		//J+
-		final MultiValueMapAdapter<String, String> springHeaders =
-			new MultiValueMapAdapter<>(headers);
+    @Deprecated
+    private MediaType getResponseMediaType(HttpResponse response) {
+        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        if (response.getEntity() != null) {
+            Header contentType = response.getEntity().getContentType();
+            if (contentType != null) {
+                mediaType = MediaType.valueOf(contentType.getValue());
+            }
+        }
+        return mediaType;
+    }
 
-		return whitelistResponseHeaders(new HttpHeaders(springHeaders));
-	}
+    protected HttpHeaders whitelistResponseHeaders(final HttpHeaders sourceHeaders) {
+        final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
+        whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
+        if (sourceHeaders.getContentType() != null) {
+            whitelistedResponseHeaders.add(
+                    HttpHeaders.CONTENT_TYPE,
+                    sourceHeaders.getContentType().toString()
+            );
+        }
 
-	@Deprecated
-	private MediaType getResponseMediaType(HttpResponse response) {
-		MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
-		if (response.getEntity() != null) {
-			Header contentType = response.getEntity().getContentType();
-			if (contentType != null) {
-				mediaType = MediaType.valueOf(contentType.getValue());
-			}
-		}
-		return mediaType;
-	}
+        for (final String headerName : getWhitelistedResponseHeaders()) {
+            final String headerValue = sourceHeaders.toSingleValueMap().get(headerName);
+            if (headerValue != null) {
+                whitelistedResponseHeaders.add(headerName, headerValue);
+            }
+        }
+        return whitelistedResponseHeaders;
+    }
 
-	protected HttpHeaders whitelistResponseHeaders(final HttpHeaders sourceHeaders) {
-		final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
-		whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
-		if (sourceHeaders.getContentType() != null) {
-			whitelistedResponseHeaders.add(
-				HttpHeaders.CONTENT_TYPE,
-				sourceHeaders.getContentType().toString()
-			);
-		}
+    /**
+     * Excludes all the blacklisted query params of the request and returns a cleaned query string.
+     */
+    String filterQueryString(final Map<String, String> params) {
+        return createQueryString(filterBlacklistedData(params));
+    }
 
-		for (final String headerName : getWhitelistedResponseHeaders()) {
-			final String headerValue = sourceHeaders.toSingleValueMap().get(headerName);
-			if (headerValue != null) {
-				whitelistedResponseHeaders.add(headerName, headerValue);
-			}
-		}
-		return whitelistedResponseHeaders;
-	}
+    private String createQueryString(final Map<String, String> params) {
+        final StringBuilder allowedQueryParams = new StringBuilder();
+        for (final Map.Entry<String, String> entry : params.entrySet()) {
+            if (allowedQueryParams.length() > 0) {
+                allowedQueryParams.append("&");
+            }
+            allowedQueryParams.append(entry.getKey()).append("=").append(
+                    transformQueryParam(entry.getKey(), entry.getValue())
+            );
+        }
+        return allowedQueryParams.toString();
+    }
 
-	/**
-	 * Excludes all the blacklisted query params of the request and returns a cleaned query string.
-	 */
-	String filterQueryString(final Map<String, String> params) {
-		return createQueryString(filterBlacklistedData(params));
-	}
+    private Map<String, String> filterBlacklistedData(Map<String, String> data) {
+        for (final String blackListedParam : getBlacklistedQueryParams()) {
+            data.remove(blackListedParam);
+        }
+        return data;
+    }
 
-	private String createQueryString(final Map<String, String> params) {
-		final StringBuilder allowedQueryParams = new StringBuilder();
-		for (final Map.Entry<String, String> entry : params.entrySet()) {
-			if (allowedQueryParams.length() > 0) {
-				allowedQueryParams.append("&");
-			}
-			allowedQueryParams.append(entry.getKey()).append("=").append(
-				transformQueryParam(entry.getKey(), entry.getValue())
-			);
-		}
-		return allowedQueryParams.toString();
-	}
+    HttpHeaders getRequestHeaders(final HttpServletRequest request) {
+        final HttpHeaders headers = new HttpHeaders();
+        for (final String headerName : getWhitelistedRequestHeaders()) {
+            final String headerValue = request.getHeader(headerName);
+            if (headerValue != null) {
+                headers.add(headerName, headerValue);
+            }
+        }
 
-	private Map<String, String> filterBlacklistedData(Map<String, String> data) {
-		for (final String blackListedParam : getBlacklistedQueryParams()) {
-			data.remove(blackListedParam);
-		}
-		return data;
-	}
+        for (
+                final Map.Entry<String, String> header
+                : getAdditionalRequestHeaders(request).entrySet()
+        ) {
+            headers.add(header.getKey(), header.getValue());
+        }
+        return headers;
+    }
 
-	HttpHeaders getRequestHeaders(final HttpServletRequest request) {
-		final HttpHeaders headers = new HttpHeaders();
-		for (final String headerName : getWhitelistedRequestHeaders()) {
-			final String headerValue = request.getHeader(headerName);
-			if (headerValue != null) {
-				headers.add(headerName, headerValue);
-			}
-		}
+    void addWhitelistedCookies(final HttpServletRequest request, final HttpHeaders headers) {
+        if (getWhitelistedCookieNames().length > 0) {
+            headers.add("Cookie", getWhitelistedCookies(request).toString());
+        }
+    }
 
-		for (
-			final Map.Entry<String, String> header
-			: getAdditionalRequestHeaders(request).entrySet()
-		) {
-			headers.add(header.getKey(), header.getValue());
-		}
-		return headers;
-	}
+    /**
+     * @param connection
+     * @param request
+     * @return
+     * @deprecated Use {@linkplain #getWhitelistedCookies(HttpServletRequest)} instead. adds
+     * selected cookies to the request
+     */
+    @Deprecated
+    private HttpRequestBase addLegacyWhitelistedCookiesToRequest(
+            HttpRequestBase connection,
+            HttpServletRequest request
+    ) {
+        if (getWhitelistedCookieNames().length > 0) {
+            connection.addHeader("Cookie", getWhitelistedCookies(request).toString());
+        }
+        return connection;
+    }
 
-	void addWhitelistedCookies(final HttpServletRequest request, final HttpHeaders headers) {
-		if (getWhitelistedCookieNames().length > 0) {
-			headers.add("Cookie", getWhitelistedCookies(request).toString());
-		}
-	}
+    private StringBuilder getWhitelistedCookies(final HttpServletRequest request) {
+        final StringBuilder cookies = new StringBuilder();
+        for (final String cookieName : getWhitelistedCookieNames()) {
+            final CookieNameMatchType cookieNameMatchType = getCookieNameMatchType();
+            if (cookieNameMatchType == CookieNameMatchType.FULL) {
+                appendCookie(cookies, WebUtils.getCookie(request, cookieName));
+            } else if (cookieNameMatchType == CookieNameMatchType.PREFIX) {
+                for (
+                        final Cookie cookieStartingWithPrefix : getCookiesByPrefix(request, cookieName)
+                ) {
+                    appendCookie(cookies, cookieStartingWithPrefix);
+                }
+            }
+        }
+        return cookies;
+    }
 
-	/**
-	 * @deprecated  Use {@linkplain #getWhitelistedCookies(HttpServletRequest)} instead. adds
-	 *              selected cookies to the request
-	 *
-	 * @param       connection
-	 * @param       request
-	 *
-	 * @return
-	 */
-	@Deprecated
-	private HttpRequestBase addLegacyWhitelistedCookiesToRequest(
-		HttpRequestBase    connection,
-		HttpServletRequest request
-	) {
-		if (getWhitelistedCookieNames().length > 0) {
-			connection.addHeader("Cookie", getWhitelistedCookies(request).toString());
-		}
-		return connection;
-	}
+    private List<Cookie> getCookiesByPrefix(final HttpServletRequest request, final String prefix) {
+        final Cookie[] cookies = request.getCookies();
+        if (cookies != null && prefix != null) {
+            final List<Cookie> result = new ArrayList<>();
+            for (final Cookie cookie : cookies) {
+                if (cookie.getName().startsWith(prefix)) {
+                    result.add(cookie);
+                }
+            }
+            return result;
+        }
+        return Collections.emptyList();
+    }
 
-	private StringBuilder getWhitelistedCookies(final HttpServletRequest request) {
-		final StringBuilder cookies = new StringBuilder();
-		for (final String cookieName : getWhitelistedCookieNames()) {
-			final CookieNameMatchType cookieNameMatchType = getCookieNameMatchType();
-			if (cookieNameMatchType == CookieNameMatchType.FULL) {
-				appendCookie(cookies, WebUtils.getCookie(request, cookieName));
-			} else if (cookieNameMatchType == CookieNameMatchType.PREFIX) {
-				for (
-					final Cookie cookieStartingWithPrefix : getCookiesByPrefix(request, cookieName)
-				) {
-					appendCookie(cookies, cookieStartingWithPrefix);
-				}
-			}
-		}
-		return cookies;
-	}
+    private void appendCookie(final StringBuilder builder, final Cookie cookie) {
+        if (cookie != null) {
+            if (builder.length() > 0) {
+                builder.append("; ");
+            }
+            builder.append(cookie.getName()).append("=").append(cookie.getValue());
+            builder.append("; path=/");
+            if (cookie.getMaxAge() != -1) {
+                builder.append("; expires=").append(cookie.getMaxAge());
+            }
+        }
+    }
 
-	private List<Cookie> getCookiesByPrefix(final HttpServletRequest request, final String prefix) {
-		final Cookie[] cookies = request.getCookies();
-		if (cookies != null && prefix != null) {
-			final List<Cookie> result = new ArrayList<>();
-			for (final Cookie cookie : cookies) {
-				if (cookie.getName().startsWith(prefix)) {
-					result.add(cookie);
-				}
-			}
-			return result;
-		}
-		return Collections.emptyList();
-	}
+    /**
+     * debug logging.
+     *
+     * @param routingEndpoint routing endpoint url
+     * @param requestSize     size of request in bytes
+     * @param responseEntity  logged responseEntity
+     * @param body
+     */
+    protected void log(
+            final String routingEndpoint,
+            long requestSize,
+            final ResponseEntity<Resource> responseEntity,
+            final String body
+    ) throws IOException {
+        final Resource responseBody = responseEntity.getBody();
 
-	private void appendCookie(final StringBuilder builder, final Cookie cookie) {
-		if (cookie != null) {
-			if (builder.length() > 0) {
-				builder.append("; ");
-			}
-			builder.append(cookie.getName()).append("=").append(cookie.getValue());
-			builder.append("; path=/");
-			if (cookie.getMaxAge() != -1) {
-				builder.append("; expires=").append(cookie.getMaxAge());
-			}
-		}
-	}
+        if (logger.isDebugEnabled()) {
+            logger.debug("Request body was: {}", body);
+            logger.debug("Truncated responseEntity: {}", responseEntity);
+            logger.debug(
+                    "Route request to 3rd party. Url={}, query bytes sent={}, bytes received={}",
+                    routingEndpoint,
+                    requestSize,
+                    responseBody != null ? responseBody.contentLength() : 0
+            );
 
-	/**
-	 * debug logging.
-	 *
-	 * @param  routingEndpoint  routing endpoint url
-	 * @param  requestSize      size of request in bytes
-	 * @param  responseEntity   logged responseEntity
-	 * @param  body
-	 */
-	protected void log(
-		final String				   routingEndpoint,
-		long						   requestSize,
-		final ResponseEntity<Resource> responseEntity,
-		final String				   body
-	) throws IOException
-	{
-		final Resource responseBody = responseEntity.getBody();
+            logger.debug(
+                    "Response to caller: Content Type {} | Status Code {}",
+                    responseEntity.getHeaders().getContentType(),
+                    responseEntity.getStatusCode()
+            );
 
-		if (logger.isDebugEnabled()) {
-			logger.debug("Request body was: {}", body);
-			logger.debug("Truncated responseEntity: {}", responseEntity);
-			logger.debug(
-				"Route request to 3rd party. Url={}, query bytes sent={}, bytes received={}",
-				routingEndpoint,
-				requestSize,
-				responseBody != null ? responseBody.contentLength() : 0
-			);
+            byte[] responseBodyBytes = null;
+            if (responseBody != null) {
+                responseBodyBytes = IOUtils.toByteArray(responseBody.getInputStream());
+            }
+            logger.debug("Response body: {}", Arrays.toString(responseBodyBytes));
+        }
+    }
 
-			logger.debug(
-				"Response to caller: Content Type {} | Status Code {}",
-				responseEntity.getHeaders().getContentType(),
-				responseEntity.getStatusCode()
-			);
+    protected String[] getWhitelistedRequestHeaders() {
+        return DEFAULT_RETURN_VALUE;
+    }
 
-			byte[] responseBodyBytes = null;
-			if (responseBody != null) {
-				responseBodyBytes = IOUtils.toByteArray(responseBody.getInputStream());
-			}
-			logger.debug("Response body: {}", Arrays.toString(responseBodyBytes));
-		}
-	}
+    /**
+     * @return
+     * @deprecated because the {@linkplain #handleGenericRequestInternal(String, Map,
+     * HttpServletRequest, String, HttpMethod)} can handle both method types.
+     */
+    @Deprecated
+    protected ProviderRequestMethod getRequestMethod() {
+        return ProviderRequestMethod.POST;
+    }
 
-	protected String[] getWhitelistedRequestHeaders() {
-		return DEFAULT_RETURN_VALUE;
-	}
+    /**
+     * properties which should be added to the request and aren't added by default
+     */
+    protected Map<String, String> getAdditionalRequestHeaders(HttpServletRequest request) {
+        return Collections.emptyMap();
+    }
 
-	/**
-	 * @deprecated  because the {@linkplain #handleGenericRequestInternal(String, Map,
-	 *              HttpServletRequest, String, HttpMethod)} can handle both method types.
-	 *
-	 * @return
-	 */
-	@Deprecated
-	protected ProviderRequestMethod getRequestMethod() {
-		return ProviderRequestMethod.POST;
-	}
+    /**
+     * cookies that will be copied from the client request to the endpoint request
+     */
+    protected String[] getWhitelistedCookieNames() {
+        return DEFAULT_RETURN_VALUE;
+    }
 
-	/**
-	 * properties which should be added to the request and aren't added by default
-	 */
-	protected Map<String, String> getAdditionalRequestHeaders(HttpServletRequest request) {
-		return Collections.emptyMap();
-	}
+    /**
+     * Define how the required cookies will be matched
+     */
+    protected CookieNameMatchType getCookieNameMatchType() {
+        return CookieNameMatchType.FULL;
+    }
 
-	/**
-	 * cookies that will be copied from the client request to the endpoint request
-	 */
-	protected String[] getWhitelistedCookieNames() {
-		return DEFAULT_RETURN_VALUE;
-	}
+    /**
+     * Transform the given query parameter before appending it to the request. The default
+     * implementation applies percent-encoding to the value.
+     *
+     * @param name  query parameter name
+     * @param value query parameter value
+     * @return encoded parameter
+     */
+    protected String transformQueryParam(String name, String value) {
+        return RequestUtils.urlencode(value);
+    }
 
-	/**
-	 * Define how the required cookies will be matched
-	 */
-	protected CookieNameMatchType getCookieNameMatchType() {
-		return CookieNameMatchType.FULL;
-	}
+    /**
+     * query params which should not be transferred to the endpoint
+     */
+    protected String[] getBlacklistedQueryParams() {
+        return DEFAULT_RETURN_VALUE;
+    }
 
-	/**
-	 * Transform the given query parameter before appending it to the request. The default
-	 * implementation applies percent-encoding to the value.
-	 *
-	 * @param   name   query parameter name
-	 * @param   value  query parameter value
-	 *
-	 * @return  encoded parameter
-	 */
-	protected String transformQueryParam(String name, String value) {
-		return RequestUtils.urlencode(value);
-	}
-
-	/**
-	 * query params which should not be transferred to the endpoint
-	 */
-	protected String[] getBlacklistedQueryParams() {
-		return DEFAULT_RETURN_VALUE;
-	}
-
-	/**
-	 * response headers which should be transferred back to the client
-	 */
-	protected String[] getWhitelistedResponseHeaders() {
-		return DEFAULT_RETURN_VALUE;
-	}
+    /**
+     * response headers which should be transferred back to the client
+     */
+    protected String[] getWhitelistedResponseHeaders() {
+        return DEFAULT_RETURN_VALUE;
+    }
 
 }
