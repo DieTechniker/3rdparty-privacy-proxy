@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.util;
 
@@ -7,29 +7,22 @@ import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-@Component
 public class ProxyHelper {
 
+	public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-	@Autowired
-	private Proxy proxy;
+	private final Proxy proxy;
+	private final String nonProxyHosts;
 
-	@Value("${http.nonProxyHosts:''}")
-	private String nonProxyHosts;
-
-	public ProxyHelper() {
-	}
-
-	// Package protected constructor for unit tests
-	ProxyHelper(Proxy proxy, String nonProxyHosts) {
+	public ProxyHelper(Proxy proxy, String nonProxyHosts) {
 		this.proxy = proxy;
 		this.nonProxyHosts = nonProxyHosts;
 	}
@@ -48,7 +41,7 @@ public class ProxyHelper {
 	public Proxy selectProxy(URL url) {
 
 		// Skip evaluation if no proxy is configured at all
-		if (Proxy.NO_PROXY.equals(proxy) || StringUtils.isEmpty(nonProxyHosts)) {
+		if (Proxy.NO_PROXY.equals(proxy) || !StringUtils.hasText(nonProxyHosts)) {
 			return proxy;
 		}
 
@@ -96,6 +89,19 @@ public class ProxyHelper {
 		}
 
 		return pattern.equals(hostname);
+	}
+
+	public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
+		final RequestConfig requestConfig =
+			RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
+			.setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
+				ROUTING_TIMEOUT_MILLISECONDS
+			)
+			.build();
+		return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
+			proxyRoutePlanner.getRoutePlanner()
+		)
+		.build();
 	}
 }
 

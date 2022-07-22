@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.util;
 
@@ -7,23 +7,22 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ProxyHelperTest {
+class ProxyHelperTest {
 
 	Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(8080));
 
 	@Test
-	public void testNoExceptionsSelectProxy() throws MalformedURLException {
+	void testNoExceptionsSelectProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper = new ProxyHelper(proxy, "");
 		assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
 	}
 
 	@Test
-	public void testSelectProxy() throws MalformedURLException {
+	void testSelectProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper =
 			new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
 		assertSame(proxy, proxyHelper.selectProxy(new URL("http://some.external.url")));
@@ -35,7 +34,7 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testSelectNoProxy() throws MalformedURLException {
+	void testSelectNoProxy() throws MalformedURLException {
 		ProxyHelper proxyHelper =
 			new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
 		assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://domain.tld")));
@@ -45,80 +44,80 @@ public class ProxyHelperTest {
 	}
 
 	@Test
-	public void testDontMatchesEmptyPattern() {
-		assertEquals(false, ProxyHelper.matches("", ""));
-		assertEquals(false, ProxyHelper.matches("test", ""));
+	void testDontMatchesEmptyPattern() {
+		assertFalse(ProxyHelper.matches("", ""));
+		assertFalse(ProxyHelper.matches("test", ""));
 	}
 
 	@Test
-	public void testMatchesWildcardAny() {
-		assertEquals(true, ProxyHelper.matches("", "*"));
-		assertEquals(true, ProxyHelper.matches("test", "*"));
+	void testMatchesWildcardAny() {
+		assertTrue(ProxyHelper.matches("", "*"));
+		assertTrue(ProxyHelper.matches("test", "*"));
 	}
 
 	@Test
-	public void testMatchesWildcardAfter() {
-		assertEquals(true, ProxyHelper.matches("test", "test*"));
-		assertEquals(true, ProxyHelper.matches("test", "tes*"));
-		assertEquals(true, ProxyHelper.matches("test", "t*"));
-		assertEquals(false, ProxyHelper.matches("test", "est*"));
+	void testMatchesWildcardAfter() {
+		assertTrue(ProxyHelper.matches("test", "test*"));
+		assertTrue(ProxyHelper.matches("test", "tes*"));
+		assertTrue(ProxyHelper.matches("test", "t*"));
+		assertFalse(ProxyHelper.matches("test", "est*"));
 	}
 
 	@Test
-	public void testMatchesWildcardBefore() {
-		assertEquals(true, ProxyHelper.matches("test", "*test"));
-		assertEquals(true, ProxyHelper.matches("test", "*est"));
-		assertEquals(true, ProxyHelper.matches("test", "*t"));
-		assertEquals(false, ProxyHelper.matches("test", "*tes"));
+	void testMatchesWildcardBefore() {
+		assertTrue(ProxyHelper.matches("test", "*test"));
+		assertTrue(ProxyHelper.matches("test", "*est"));
+		assertTrue(ProxyHelper.matches("test", "*t"));
+		assertFalse(ProxyHelper.matches("test", "*tes"));
 	}
 
 	@Test
-	public void testMatchesWildcardAtBeginAndEnd() {
-		assertEquals(true, ProxyHelper.matches("test", "**"));
-		assertEquals(true, ProxyHelper.matches("test", "*test*"));
-		assertEquals(true, ProxyHelper.matches("test", "*t*"));
-		assertEquals(true, ProxyHelper.matches("test", "*e*"));
-		assertEquals(true, ProxyHelper.matches("test", "*s*"));
-		assertEquals(true, ProxyHelper.matches("test", "*es*"));
-		assertEquals(true, ProxyHelper.matches("test", "*tes*"));
-		assertEquals(true, ProxyHelper.matches("test", "*est*"));
-		assertEquals(true, ProxyHelper.matches("test", "*te*"));
-		assertEquals(true, ProxyHelper.matches("test", "*st*"));
-		assertEquals(false, ProxyHelper.matches("test", "*se*"));
+	void testMatchesWildcardAtBeginAndEnd() {
+		assertTrue(ProxyHelper.matches("test", "**"));
+		assertTrue(ProxyHelper.matches("test", "*test*"));
+		assertTrue(ProxyHelper.matches("test", "*t*"));
+		assertTrue(ProxyHelper.matches("test", "*e*"));
+		assertTrue(ProxyHelper.matches("test", "*s*"));
+		assertTrue(ProxyHelper.matches("test", "*es*"));
+		assertTrue(ProxyHelper.matches("test", "*tes*"));
+		assertTrue(ProxyHelper.matches("test", "*est*"));
+		assertTrue(ProxyHelper.matches("test", "*te*"));
+		assertTrue(ProxyHelper.matches("test", "*st*"));
+		assertFalse(ProxyHelper.matches("test", "*se*"));
 	}
 
 	@Test
-	public void testMatchesWithoutWildcard() {
-		assertEquals(true, ProxyHelper.matches("test", "test"));
-		assertEquals(false, ProxyHelper.matches("test", "est"));
-		assertEquals(false, ProxyHelper.matches("test", "tes"));
-		assertEquals(false, ProxyHelper.matches("test", "es"));
+	void testMatchesWithoutWildcard() {
+		assertTrue(ProxyHelper.matches("test", "test"));
+		assertFalse(ProxyHelper.matches("test", "est"));
+		assertFalse(ProxyHelper.matches("test", "tes"));
+		assertFalse(ProxyHelper.matches("test", "es"));
 	}
 
 	@Test
-	public void testMatchesCaseSensitive() {
-		assertEquals(false, ProxyHelper.matches("test", "Test"));
-		assertEquals(false, ProxyHelper.matches("Test", "test"));
-		assertEquals(false, ProxyHelper.matches("test", "T*"));
-		assertEquals(false, ProxyHelper.matches("Test", "t*"));
-		assertEquals(false, ProxyHelper.matches("test", "*T"));
-		assertEquals(false, ProxyHelper.matches("tesT", "*t"));
+	void testMatchesCaseSensitive() {
+		assertFalse(ProxyHelper.matches("test", "Test"));
+		assertFalse(ProxyHelper.matches("Test", "test"));
+		assertFalse(ProxyHelper.matches("test", "T*"));
+		assertFalse(ProxyHelper.matches("Test", "t*"));
+		assertFalse(ProxyHelper.matches("test", "*T"));
+		assertFalse(ProxyHelper.matches("tesT", "*t"));
 	}
 
 	@Test
-	public void testContainingAsterisk() {
-		assertEquals(false, ProxyHelper.matches("test", "t*t"));
-		assertEquals(true, ProxyHelper.matches("t*t", "t*t"));
+	void testContainingAsterisk() {
+		assertFalse(ProxyHelper.matches("test", "t*t"));
+		assertTrue(ProxyHelper.matches("t*t", "t*t"));
 	}
 
 	@Test
-	public void testRepeatingAsterisks() {
-		assertEquals(false, ProxyHelper.matches("test", "t**"));
-		assertEquals(false, ProxyHelper.matches("test", "**t"));
-		assertEquals(false, ProxyHelper.matches("test", "***"));
-		assertEquals(true, ProxyHelper.matches("t*t", "***"));
-		assertEquals(true, ProxyHelper.matches("t*t", "t**"));
-		assertEquals(true, ProxyHelper.matches("t*t", "**t"));
+	void testRepeatingAsterisks() {
+		assertFalse(ProxyHelper.matches("test", "t**"));
+		assertFalse(ProxyHelper.matches("test", "**t"));
+		assertFalse(ProxyHelper.matches("test", "***"));
+		assertTrue(ProxyHelper.matches("t*t", "***"));
+		assertTrue(ProxyHelper.matches("t*t", "t**"));
+		assertTrue(ProxyHelper.matches("t*t", "**t"));
 	}
 }
 
