@@ -1,5 +1,6 @@
 package de.tk.opensource.privacyproxy.util;
 
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
@@ -7,6 +8,9 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProxyHelperTest {
@@ -116,5 +120,14 @@ class ProxyHelperTest {
         assertTrue(ProxyHelper.matches("t*t", "***"));
         assertTrue(ProxyHelper.matches("t*t", "t**"));
         assertTrue(ProxyHelper.matches("t*t", "**t"));
+    }
+
+    @Test
+    void testProxyRoutePlannerInitialize() {
+        ProxyHelper proxyHelper = new ProxyHelper(null, null, null, null);
+        assertThat(proxyHelper.getProxyRoutePlanner(), is(instanceOf(SystemDefaultRoutePlanner.class)));
+
+        proxyHelper = new ProxyHelper(null, "proxy.domain.de", 8080, null);
+        assertThat(proxyHelper.getProxyRoutePlanner(), is(instanceOf(PrivacyProxyRoutePlanner.class)));
     }
 }
