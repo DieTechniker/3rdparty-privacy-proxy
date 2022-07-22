@@ -8,7 +8,6 @@ import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
@@ -23,21 +22,20 @@ public class ProxyHelper {
     public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-    @Value("${http.proxyHost:#{null}}")
-    private String proxyHost;
-
-    @Value("${http.proxyPort:#{null}}")
-    private Integer proxyPort;
-
-    @Value("${http.nonProxyHosts:#{null}}")
-    private String nonProxyHosts;
+    private final String proxyHost;
+    private final Integer proxyPort;
+    private final String nonProxyHosts;
+    private final HttpHost httpProxyHost;
 
     private Proxy proxy;
     private DefaultRoutePlanner proxyRoutePlanner;
 
-    public ProxyHelper(Proxy proxy, String nonProxyHosts) {
+    public ProxyHelper(Proxy proxy, final String proxyHost, final Integer proxyPort, final String nonProxyHosts) {
+        this.proxyHost = proxyHost;
+        this.proxyPort = proxyPort;
         this.nonProxyHosts = nonProxyHosts;
         this.proxy = proxy;
+        this.httpProxyHost = (this.proxyHost != null && this.proxyPort != null) ? new HttpHost(this.proxyHost, this.proxyPort) : null;
     }
 
     private Proxy getProxy() {
@@ -53,13 +51,19 @@ public class ProxyHelper {
 
     public DefaultRoutePlanner getProxyRoutePlanner() {
         if (proxyRoutePlanner == null) {
-            if (proxyHost != null && proxyPort != null) {
-                proxyRoutePlanner = new ProxyRoutePlanner(this, new HttpHost(proxyHost, proxyPort));
+            if (getHttpProxyHost() != null) {
+                proxyRoutePlanner = new PrivacyProxyRoutePlanner(this, getHttpProxyHost());
             }
-            LOGGER.debug("No Proxy configured - Using System (JRE) Default");
-            proxyRoutePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault());
+            else {
+                LOGGER.debug("No Proxy configured - Using System (JRE) Default");
+                proxyRoutePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault());
+            }
         }
         return proxyRoutePlanner;
+    }
+
+    public HttpHost getHttpProxyHost() {
+        return httpProxyHost;
     }
 
     /**

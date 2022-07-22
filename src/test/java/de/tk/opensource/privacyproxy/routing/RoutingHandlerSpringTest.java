@@ -1,7 +1,6 @@
 package de.tk.opensource.privacyproxy.routing;
 
 import de.tk.opensource.privacyproxy.config.TestConfig;
-import de.tk.opensource.privacyproxy.util.ProxyHelper;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -15,14 +15,14 @@ class ProxyHelperTest {
 
     @Test
     void testNoExceptionsSelectProxy() throws MalformedURLException {
-        ProxyHelper proxyHelper = new ProxyHelper(proxy, "");
+        ProxyHelper proxyHelper = new ProxyHelper(proxy, null, null, "");
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
     }
 
     @Test
     void testSelectProxy() throws MalformedURLException {
         ProxyHelper proxyHelper =
-                new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
+                new ProxyHelper(proxy, null, null, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://some.external.url")));
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://otherdomain.tld")));
@@ -34,7 +34,7 @@ class ProxyHelperTest {
     @Test
     void testSelectNoProxy() throws MalformedURLException {
         ProxyHelper proxyHelper =
-                new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
+                new ProxyHelper(proxy, null, null, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://domain.tld")));
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://www.wildcard.tld")));
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://any-tld.tld")));
