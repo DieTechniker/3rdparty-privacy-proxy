@@ -5,6 +5,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,5 +45,15 @@ public class ProxyRoutePlanner extends DefaultProxyRoutePlanner {
         }
         LOGGER.debug("Using Proxy for {}", host);
         return super.determineRoute(host, request, context);
+    }
+
+    /**
+     * @deprecated use {@linkplain ProxyHelper#getProxyRoutePlanner()} instead
+     *
+     * @return a proxy route planner
+     */
+    @Deprecated
+    public DefaultRoutePlanner getRoutePlanner() {
+        return proxyHelper.getProxyRoutePlanner();
     }
 }
