@@ -1,5 +1,3 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.delivery;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -32,5 +30,3 @@ public class TruetypeFontDeliveryController extends AssetDeliveryController {
 		return super.getAssetInternal(provider, font);
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

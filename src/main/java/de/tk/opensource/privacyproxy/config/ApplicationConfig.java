@@ -1,5 +1,3 @@
-/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.config;
 
 import java.util.Collections;
@@ -55,5 +53,3 @@ public class ApplicationConfig {
 		);
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

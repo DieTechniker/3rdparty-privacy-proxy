@@ -1,5 +1,3 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.retrieval;
 
 import java.io.File;
@@ -69,5 +67,3 @@ public abstract class AssetRetrievalService implements InitializingBean {
 		this.updateAssets();
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

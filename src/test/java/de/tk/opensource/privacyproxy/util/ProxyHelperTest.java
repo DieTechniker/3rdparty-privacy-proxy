@@ -1,5 +1,3 @@
-/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.util;
 
 import java.net.InetSocketAddress;
@@ -120,5 +118,3 @@ class ProxyHelperTest {
 		assertTrue(ProxyHelper.matches("t*t", "**t"));
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

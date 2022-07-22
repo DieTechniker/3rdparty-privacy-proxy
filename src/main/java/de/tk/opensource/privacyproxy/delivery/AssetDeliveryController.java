@@ -1,5 +1,3 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.delivery;
 
 import java.io.File;
@@ -119,5 +117,3 @@ public abstract class AssetDeliveryController {
 	}
 
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

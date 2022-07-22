@@ -1,5 +1,3 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.util;
 
 import java.io.ByteArrayInputStream;
@@ -79,5 +77,3 @@ public class PDFHelper {
 		return data;
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

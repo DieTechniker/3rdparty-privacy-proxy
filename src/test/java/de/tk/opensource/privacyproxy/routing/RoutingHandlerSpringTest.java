@@ -1,5 +1,3 @@
-/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.routing;
 
 import java.io.IOException;
@@ -180,5 +178,3 @@ class RoutingHandlerSpringTest {
 		assertEquals(queryParamsMultiValue, requestQueryParams);
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

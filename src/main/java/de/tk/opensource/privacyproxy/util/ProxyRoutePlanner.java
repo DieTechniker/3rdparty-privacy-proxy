@@ -1,5 +1,3 @@
-/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.util;
 
 import java.net.MalformedURLException;
@@ -79,5 +77,3 @@ public class ProxyRoutePlanner {
 		return routePlanner;
 	}
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
