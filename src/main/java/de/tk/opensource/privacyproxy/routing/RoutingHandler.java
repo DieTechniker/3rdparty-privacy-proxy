@@ -74,6 +74,10 @@ public abstract class RoutingHandler {
             @Nullable final String body,
             final HttpMethod method
     ) {
+        if (method == HttpMethod.GET && body != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         final String queryString = filterQueryString(queryStrings);
         final URI uri =
                 UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
@@ -82,9 +86,6 @@ public abstract class RoutingHandler {
         final HttpHeaders headers = getRequestHeaders(request);
         addWhitelistedCookies(request, headers);
 
-        if (method == HttpMethod.GET && body != null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
         final HttpEntity<String> httpEntity =
                 body != null ? new HttpEntity<>(body, headers) : new HttpEntity<>(headers);
         try {
