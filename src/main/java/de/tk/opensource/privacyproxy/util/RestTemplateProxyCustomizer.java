@@ -6,14 +6,11 @@ import org.springframework.web.client.RestTemplate;
 
 public class RestTemplateProxyCustomizer implements RestTemplateCustomizer {
 
-    private final ProxyRoutePlanner proxyRoutePlanner;
     private final ProxyHelper proxyHelper;
 
     public RestTemplateProxyCustomizer(
-            ProxyRoutePlanner proxyRoutePlanner,
             ProxyHelper proxyHelper
     ) {
-        this.proxyRoutePlanner = proxyRoutePlanner;
         this.proxyHelper = proxyHelper;
     }
 
@@ -21,7 +18,7 @@ public class RestTemplateProxyCustomizer implements RestTemplateCustomizer {
     public void customize(RestTemplate restTemplate) {
         restTemplate.setRequestFactory(
                 new HttpComponentsClientHttpRequestFactory(
-                        proxyHelper.getCloseableHttpClient(proxyRoutePlanner)
+                        proxyHelper.getCloseableHttpClient()
                 )
         );
     }
