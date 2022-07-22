@@ -1,4 +1,6 @@
 # Release notes
+## 1.1.0
+* Deprecated Code deleted
 ## 1.0.15
 * Upgrade to Spring-Boot 2.7.1
 * Modified GitHub Action to build maven snapshots on published features 

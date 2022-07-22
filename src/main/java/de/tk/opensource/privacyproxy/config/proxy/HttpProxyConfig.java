@@ -1,7 +1,6 @@
 package de.tk.opensource.privacyproxy.config.proxy;
 
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
-import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -24,18 +23,6 @@ public class HttpProxyConfig {
     @Bean
     public ProxyHelper proxyHelper() {
         return new ProxyHelper(null, proxyHost, proxyPort, nonProxyHosts);
-    }
-
-    /**
-     * @deprecated use {@linkplain ProxyHelper#getProxyRoutePlanner()} instead
-     * @return a proxy route planner
-     */
-    @Bean
-    @DependsOn({"proxyHelper"})
-    @Deprecated
-    public ProxyRoutePlanner proxyRoutePlanner() {
-        final ProxyHelper proxyHelper = proxyHelper();
-        return new ProxyRoutePlanner(proxyHelper, proxyHelper.getHttpProxyHost());
     }
 
     @Bean

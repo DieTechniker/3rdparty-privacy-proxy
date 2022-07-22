@@ -15,7 +15,7 @@ public class RetrievalEndpoint {
     public void setRemoteUrl(String remoteUrl) {
 
         this.remoteUrl = remoteUrl;
-        if (StringUtils.isEmpty(this.filename)) {
+        if (!StringUtils.hasText(this.filename)) {
             setFilename(remoteUrl.substring(remoteUrl.lastIndexOf('/')));
         }
 
