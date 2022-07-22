@@ -12,28 +12,17 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-@Component
 public class ProxyHelper {
 
 	public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-	@Value("${http.nonProxyHosts:''}")
-	private String nonProxyHosts;
-
 	private final Proxy proxy;
+	private final String nonProxyHosts;
 
-	@Autowired
-	public ProxyHelper(Proxy proxy) {
-		this.proxy = proxy;
-	}
-
-	ProxyHelper(Proxy proxy, String nonProxyHosts) {
+	public ProxyHelper(Proxy proxy, String nonProxyHosts) {
 		this.proxy = proxy;
 		this.nonProxyHosts = nonProxyHosts;
 	}

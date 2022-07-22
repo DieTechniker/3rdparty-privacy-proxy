@@ -4,10 +4,8 @@ package de.tk.opensource.privacyproxy.util;
 
 import org.springframework.boot.web.client.RestTemplateCustomizer;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-@Component
 public class RestTemplateProxyCustomizer implements RestTemplateCustomizer {
 
 	private final ProxyRoutePlanner proxyRoutePlanner;

@@ -20,12 +20,12 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.listener.RetryListenerSupport;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@Configuration
+@Configuration("PrivacyProxyConfig")
 @EnableCaching
 @EnableConfigurationProperties
 @EnableRetry
 @EnableScheduling
-public class PrivacyProxyConfig {
+public class ApplicationConfig {
 
 	@Bean
 	public ConversionService conversionService() {

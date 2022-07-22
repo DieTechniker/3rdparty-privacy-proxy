@@ -1,4 +1,4 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
+/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
 
 package de.tk.opensource.privacyproxy.util;
 
@@ -6,8 +6,6 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URL;
-
-import javax.annotation.PostConstruct;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -19,34 +17,25 @@ import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
-@Component
 public class ProxyRoutePlanner {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyRoutePlanner.class);
 
 	private final ProxyHelper proxyHelper;
-
-	@Value("${http.proxyHost:''}")
-	private String proxyHost;
-
-	@Value("${http.proxyPort:-1}")
-	private Integer proxyPort;
+	private final HttpHost httpHost;
 
 	private DefaultRoutePlanner routePlanner;
 
-	public ProxyRoutePlanner(ProxyHelper proxyHelper) {
+	public ProxyRoutePlanner(ProxyHelper proxyHelper, HttpHost httpHost) {
 		this.proxyHelper = proxyHelper;
+		this.httpHost = httpHost;
+		initRoutePlanner();
 	}
 
-	@PostConstruct
 	private void initRoutePlanner() {
-		if (!StringUtils.isEmpty(proxyHost) && proxyPort != -1) {
-			final HttpHost proxy = new HttpHost(proxyHost, proxyPort);
+		if (httpHost != null) {
 			routePlanner =
-				new DefaultProxyRoutePlanner(proxy) {
+				new DefaultProxyRoutePlanner(httpHost) {
 					@Override
 					public HttpRoute determineRoute(
 						HttpHost    host,
