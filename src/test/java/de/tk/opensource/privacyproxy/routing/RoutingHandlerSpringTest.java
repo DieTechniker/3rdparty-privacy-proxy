@@ -155,8 +155,8 @@ class RoutingHandlerSpringTest {
                         "https://localhost/1337/wt",
                         queryParams,
                         request,
-                        "endpoint?key=1337,XXX&key2=YYYY",
-                        HttpMethod.GET
+                        null,
+                        HttpMethod.POST
                 );
 
         assertThat(responseEntity, notNullValue());
