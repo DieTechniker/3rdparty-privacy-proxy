@@ -3,7 +3,6 @@ package de.tk.opensource.privacyproxy.config.proxy;
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
 import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import de.tk.opensource.privacyproxy.util.RestTemplateProxyCustomizer;
-import org.apache.http.HttpHost;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
@@ -11,12 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-
 @Configuration
 public class HttpProxyConfig {
-
     @Value("${http.proxyHost:#{null}}")
     private String proxyHost;
 
@@ -27,40 +22,25 @@ public class HttpProxyConfig {
     private String nonProxyHosts;
 
     @Bean
-    public Proxy proxy() {
-        if (proxyHost == null || proxyPort == null) {
-            return Proxy.NO_PROXY;
-        } else {
-            return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        }
-    }
-
-    @Bean
-    public HttpHost httpHost() {
-        if (proxyHost != null && proxyPort != null) {
-            return new HttpHost(proxyHost, proxyPort);
-        }
-        return null;
-    }
-
-    @Bean
-    @DependsOn("proxy")
     public ProxyHelper proxyHelper() {
-        return new ProxyHelper(proxy(), nonProxyHosts);
+        return new ProxyHelper(null, proxyHost, proxyPort, nonProxyHosts);
     }
 
+    /**
+     * @deprecated use {@linkplain ProxyHelper#getProxyRoutePlanner()} instead
+     * @return a proxy route planner
+     */
     @Bean
-    @DependsOn({"httpHost", "proxyHelper"})
+    @DependsOn({"proxyHelper"})
+    @Deprecated
     public ProxyRoutePlanner proxyRoutePlanner() {
-        return new ProxyRoutePlanner(proxyHelper(), httpHost());
+        final ProxyHelper proxyHelper = proxyHelper();
+        return new ProxyRoutePlanner(proxyHelper, proxyHelper.getHttpProxyHost());
     }
 
     @Bean
-    @DependsOn({"proxyHelper", "proxyRoutePlanner"})
+    @DependsOn({"proxyHelper"})
     public RestTemplate restTemplate() {
-        return new RestTemplateBuilder(
-                new RestTemplateProxyCustomizer(proxyRoutePlanner(), proxyHelper())
-        )
-                .build();
+        return new RestTemplateBuilder(new RestTemplateProxyCustomizer(proxyHelper())).build();
     }
 }

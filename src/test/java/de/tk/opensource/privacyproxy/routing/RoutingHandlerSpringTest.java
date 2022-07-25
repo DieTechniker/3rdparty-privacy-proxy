@@ -1,8 +1,6 @@
 package de.tk.opensource.privacyproxy.routing;
 
 import de.tk.opensource.privacyproxy.config.TestConfig;
-import de.tk.opensource.privacyproxy.util.ProxyHelper;
-import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,16 +38,11 @@ class RoutingHandlerSpringTest {
 
     private MockRestServiceServer mockServer;
 
-    private RoutingHandler routingHandler;
+    @Autowired
+    private MyRoutingHandler routingHandler;
 
     @Autowired
     private RestTemplate restTemplate;
-
-    @Autowired
-    private ProxyRoutePlanner proxyRoutePlanner;
-
-    @Autowired
-    private ProxyHelper proxyHelper;
 
     private static void requestTo(
             final ClientHttpRequest request,
@@ -78,9 +71,6 @@ class RoutingHandlerSpringTest {
     @BeforeEach
     public void setUp() throws Exception {
         mockServer = MockRestServiceServer.createServer(restTemplate);
-        routingHandler =
-                new RoutingHandler(restTemplate, proxyRoutePlanner, proxyHelper) {
-                };
     }
 
     @Test

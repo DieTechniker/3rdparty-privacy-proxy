@@ -1,13 +1,18 @@
 package de.tk.opensource.privacyproxy.util;
 
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultRoutePlanner;
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -17,12 +22,47 @@ public class ProxyHelper {
     public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-    private final Proxy proxy;
+    private final String proxyHost;
+    private final Integer proxyPort;
     private final String nonProxyHosts;
+    private final HttpHost httpProxyHost;
 
-    public ProxyHelper(Proxy proxy, String nonProxyHosts) {
-        this.proxy = proxy;
+    private Proxy proxy;
+    private DefaultRoutePlanner proxyRoutePlanner;
+
+    public ProxyHelper(Proxy proxy, final String proxyHost, final Integer proxyPort, final String nonProxyHosts) {
+        this.proxyHost = proxyHost;
+        this.proxyPort = proxyPort;
         this.nonProxyHosts = nonProxyHosts;
+        this.proxy = proxy;
+        this.httpProxyHost = (this.proxyHost != null && this.proxyPort != null) ? new HttpHost(this.proxyHost, this.proxyPort) : null;
+    }
+
+    private Proxy getProxy() {
+        if (proxy != null) {
+            return proxy;
+        }
+
+        return (proxyHost == null || proxyPort == null) 
+            ? Proxy.NO_PROXY 
+            : new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+    }
+
+    public DefaultRoutePlanner getProxyRoutePlanner() {
+        if (proxyRoutePlanner == null) {
+            if (getHttpProxyHost() != null) {
+                proxyRoutePlanner = new PrivacyProxyRoutePlanner(this, getHttpProxyHost());
+            }
+            else {
+                LOGGER.debug("No Proxy configured - Using System (JRE) Default");
+                proxyRoutePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault());
+            }
+        }
+        return proxyRoutePlanner;
+    }
+
+    public HttpHost getHttpProxyHost() {
+        return httpProxyHost;
     }
 
     /**
@@ -72,8 +112,8 @@ public class ProxyHelper {
     public Proxy selectProxy(URL url) {
 
         // Skip evaluation if no proxy is configured at all
-        if (Proxy.NO_PROXY.equals(proxy) || !StringUtils.hasText(nonProxyHosts)) {
-            return proxy;
+        if (Proxy.NO_PROXY.equals(getProxy()) || !StringUtils.hasText(nonProxyHosts)) {
+            return getProxy();
         }
 
         // The list of excluded host patterns is separated by '|'.
@@ -82,12 +122,12 @@ public class ProxyHelper {
         String hostname = url.getHost();
         boolean isExcluded = excluded.anyMatch(pattern -> matches(hostname, pattern.trim()));
 
-        Proxy selection = isExcluded ? Proxy.NO_PROXY : proxy;
+        Proxy selection = isExcluded ? Proxy.NO_PROXY : getProxy();
         LOGGER.debug("Using {} for {} ({})", selection, hostname, nonProxyHosts);
         return selection;
     }
 
-    public CloseableHttpClient getCloseableHttpClient(final ProxyRoutePlanner proxyRoutePlanner) {
+    public CloseableHttpClient getCloseableHttpClient() {
         final RequestConfig requestConfig =
                 RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
                         .setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
@@ -95,7 +135,7 @@ public class ProxyHelper {
                         )
                         .build();
         return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
-                        proxyRoutePlanner.getRoutePlanner()
+                        getProxyRoutePlanner()
                 )
                 .build();
     }

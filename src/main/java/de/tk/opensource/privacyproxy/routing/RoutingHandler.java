@@ -4,7 +4,6 @@ import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
 import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
 import de.tk.opensource.privacyproxy.config.UrlPattern;
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
-import de.tk.opensource.privacyproxy.util.ProxyRoutePlanner;
 import de.tk.opensource.privacyproxy.util.RequestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -16,6 +15,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
@@ -55,21 +55,12 @@ public abstract class RoutingHandler {
             "Failed to proxy request. Endpoint: %s, Error: %s";
     private static final String[] DEFAULT_RETURN_VALUE = new String[0];
     protected final Logger logger = LoggerFactory.getLogger(getClass());
-    private final ProxyRoutePlanner proxyRoutePlanner;
 
-    private final ProxyHelper proxyHelper;
+    @Autowired
+    private ProxyHelper proxyHelper;
 
-    private final RestTemplate restTemplate;
-
-    public RoutingHandler(
-            RestTemplate restTemplate,
-            ProxyRoutePlanner proxyRoutePlanner,
-            ProxyHelper proxyHelper
-    ) {
-        this.restTemplate = restTemplate;
-        this.proxyRoutePlanner = proxyRoutePlanner;
-        this.proxyHelper = proxyHelper;
-    }
+    @Autowired
+    private RestTemplate restTemplate;
 
     /**
      * Basic implementation for requests, which are routed through the privacy-proxy. It can be
@@ -83,6 +74,10 @@ public abstract class RoutingHandler {
             @Nullable final String body,
             final HttpMethod method
     ) {
+        if (method == HttpMethod.GET && body != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         final String queryString = filterQueryString(queryStrings);
         final URI uri =
                 UriComponentsBuilder.fromUriString(targetEndpoint).query(queryString).build(true)
@@ -91,9 +86,6 @@ public abstract class RoutingHandler {
         final HttpHeaders headers = getRequestHeaders(request);
         addWhitelistedCookies(request, headers);
 
-        if (method == HttpMethod.GET && body != null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
         final HttpEntity<String> httpEntity =
                 body != null ? new HttpEntity<>(body, headers) : new HttpEntity<>(headers);
         try {
@@ -141,7 +133,7 @@ public abstract class RoutingHandler {
     ) {
         try (
                 final CloseableHttpClient httpClient =
-                        proxyHelper.getCloseableHttpClient(proxyRoutePlanner)
+                        proxyHelper.getCloseableHttpClient()
         ) {
             HttpRequestBase httpRequest;
 

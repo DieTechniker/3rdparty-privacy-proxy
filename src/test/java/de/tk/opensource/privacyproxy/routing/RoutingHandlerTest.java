@@ -23,9 +23,7 @@ class RoutingHandlerTest {
         parameter.put("one", "parameter1");
         parameter.put("two", "some, special chars?");
 
-        RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
-                };
+        RoutingHandler handler = new RoutingHandler() {};
 
         assertEquals(
                 "one=parameter1&two=some%2C+special+chars%3F",
@@ -39,7 +37,7 @@ class RoutingHandlerTest {
         parameter.put("param", "value, test");
 
         RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String transformQueryParam(String name, String value) {
                         return value;
@@ -56,7 +54,7 @@ class RoutingHandlerTest {
         parameter.put("param", "some value");
 
         RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String[] getBlacklistedQueryParams() {
                         return new String[]{"restricted"};
@@ -69,7 +67,7 @@ class RoutingHandlerTest {
     @Test
     void testWhitelistResponseHeaders() {
         final RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String[] getWhitelistedResponseHeaders() {
                         return new String[]{"Set-Cookie"};
@@ -96,7 +94,7 @@ class RoutingHandlerTest {
     @Test
     void testGetRequestHeaders() {
         final RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String[] getWhitelistedRequestHeaders() {
                         return new String[]{"user-agent", "referrer"};
@@ -137,7 +135,7 @@ class RoutingHandlerTest {
     @Test
     void testAddWhitelistedCookiesByPrefix() {
         final RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String[] getWhitelistedCookieNames() {
                         return new String[]{"wt_", "wteid_"};
@@ -168,7 +166,7 @@ class RoutingHandlerTest {
     @Test
     void testAddWhitelistedCookies() {
         final RoutingHandler handler =
-                new RoutingHandler(null, null, null) {
+                new RoutingHandler() {
                     @Override
                     protected String[] getWhitelistedCookieNames() {
                         return new String[]{"wt_rla", "wteid_"};

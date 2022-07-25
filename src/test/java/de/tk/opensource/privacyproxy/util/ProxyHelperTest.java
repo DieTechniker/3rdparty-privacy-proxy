@@ -1,5 +1,6 @@
 package de.tk.opensource.privacyproxy.util;
 
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
@@ -7,6 +8,9 @@ import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ProxyHelperTest {
@@ -15,14 +19,14 @@ class ProxyHelperTest {
 
     @Test
     void testNoExceptionsSelectProxy() throws MalformedURLException {
-        ProxyHelper proxyHelper = new ProxyHelper(proxy, "");
+        ProxyHelper proxyHelper = new ProxyHelper(proxy, null, null, "");
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
     }
 
     @Test
     void testSelectProxy() throws MalformedURLException {
         ProxyHelper proxyHelper =
-                new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
+                new ProxyHelper(proxy, null, null, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://some.external.url")));
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://www.domain.tld")));
         assertSame(proxy, proxyHelper.selectProxy(new URL("http://otherdomain.tld")));
@@ -34,7 +38,7 @@ class ProxyHelperTest {
     @Test
     void testSelectNoProxy() throws MalformedURLException {
         ProxyHelper proxyHelper =
-                new ProxyHelper(proxy, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
+                new ProxyHelper(proxy, null, null, "domain.tld|*.wildcard.tld|any-tld.*|*.all.*");
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://domain.tld")));
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://www.wildcard.tld")));
         assertSame(Proxy.NO_PROXY, proxyHelper.selectProxy(new URL("http://any-tld.tld")));
@@ -116,5 +120,14 @@ class ProxyHelperTest {
         assertTrue(ProxyHelper.matches("t*t", "***"));
         assertTrue(ProxyHelper.matches("t*t", "t**"));
         assertTrue(ProxyHelper.matches("t*t", "**t"));
+    }
+
+    @Test
+    void testProxyRoutePlannerInitialize() {
+        ProxyHelper proxyHelper = new ProxyHelper(null, null, null, null);
+        assertThat(proxyHelper.getProxyRoutePlanner(), is(instanceOf(SystemDefaultRoutePlanner.class)));
+
+        proxyHelper = new ProxyHelper(null, "proxy.domain.de", 8080, null);
+        assertThat(proxyHelper.getProxyRoutePlanner(), is(instanceOf(PrivacyProxyRoutePlanner.class)));
     }
 }
