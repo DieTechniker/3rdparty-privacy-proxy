@@ -64,7 +64,7 @@ public abstract class RoutingHandler {
             @Nullable final String body,
             final HttpMethod method
     ) {
-        if (method == HttpMethod.GET && body != null) {
+        if (method == HttpMethod.POST && body == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
