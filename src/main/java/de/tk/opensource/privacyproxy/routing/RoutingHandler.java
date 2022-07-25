@@ -65,7 +65,7 @@ public abstract class RoutingHandler {
             final HttpMethod method
     ) {
         if (method == HttpMethod.GET && body != null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         final String queryString = filterQueryString(queryStrings);
