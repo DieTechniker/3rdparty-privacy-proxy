@@ -1,9 +1,4 @@
-/*--- (C) 1999-2021 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.config;
-
-import java.util.Collections;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +15,9 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.listener.RetryListenerSupport;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.Collections;
+import java.util.List;
+
 @Configuration("PrivacyProxyConfig")
 @EnableCaching
 @EnableConfigurationProperties
@@ -27,33 +25,31 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class ApplicationConfig {
 
-	@Bean
-	public ConversionService conversionService() {
-		return new DefaultConversionService();
-	}
+    @Bean
+    public ConversionService conversionService() {
+        return new DefaultConversionService();
+    }
 
-	@Bean
-	public List<RetryListener> retryListeners() {
-		Logger log = LoggerFactory.getLogger(getClass());
+    @Bean
+    public List<RetryListener> retryListeners() {
+        Logger log = LoggerFactory.getLogger(getClass());
 
-		return Collections.singletonList(
-			new RetryListenerSupport() {
-				@Override
-				public <T, E extends Throwable> void onError(
-					RetryContext		context,
-					RetryCallback<T, E> callback,
-					Throwable			throwable
-				) {
-					log.warn(
-						"Retryable method {} threw {}th exception {}",
-						context.getAttribute("context.name"),
-						context.getRetryCount(),
-						throwable.getMessage()
-					);
-				}
-			}
-		);
-	}
+        return Collections.singletonList(
+                new RetryListenerSupport() {
+                    @Override
+                    public <T, E extends Throwable> void onError(
+                            RetryContext context,
+                            RetryCallback<T, E> callback,
+                            Throwable throwable
+                    ) {
+                        log.warn(
+                                "Retryable method {} threw {}th exception {}",
+                                context.getAttribute("context.name"),
+                                context.getRetryCount(),
+                                throwable.getMessage()
+                        );
+                    }
+                }
+        );
+    }
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
