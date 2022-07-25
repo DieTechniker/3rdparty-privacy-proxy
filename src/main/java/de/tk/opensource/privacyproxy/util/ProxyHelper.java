@@ -39,14 +39,13 @@ public class ProxyHelper {
     }
 
     private Proxy getProxy() {
-        if (proxy == null) {
-            if (proxyHost == null || proxyPort == null) {
-                proxy = Proxy.NO_PROXY;
-            } else {
-                proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-            }
+        if (proxy != null) {
+            return proxy;
         }
-        return proxy;
+
+        return (proxyHost == null || proxyPort == null) 
+            ? Proxy.NO_PROXY 
+            : new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
     }
 
     public DefaultRoutePlanner getProxyRoutePlanner() {
