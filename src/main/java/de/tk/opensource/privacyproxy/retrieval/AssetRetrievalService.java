@@ -1,17 +1,14 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.retrieval;
 
-import java.io.File;
-import java.util.List;
-
+import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
+import java.io.File;
+import java.util.List;
 
 /**
  * This class downloads files from a remote host and stores them grouped by "provider" on the file
@@ -22,52 +19,50 @@ import de.tk.opensource.privacyproxy.config.RetrievalEndpoint;
  */
 public abstract class AssetRetrievalService implements InitializingBean {
 
-	protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
+    protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
 
-	/**
-	 * Configure where the files will be stored on the file system.
-	 */
-	@Value("${assets.fileLocation}")
-	private String location;
+    /**
+     * Configure where the files will be stored on the file system.
+     */
+    @Value("${assets.fileLocation}")
+    private String location;
 
-	@Autowired
-	private AssetRetryRetrievalService assetRetryRetrievalService;
+    @Autowired
+    private AssetRetryRetrievalService assetRetryRetrievalService;
 
-	/**
-	 * Method to fetch the assets defined in the proper implementation class. You need to implement
-	 * one AssetRetrievalService class per Provider. A provider is a logical group which should
-	 * represent the source of the files. Put them into the application.yml If the endpoint delivers
-	 * a ZIP file it will be extracted
-	 */
-	public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
-		boolean directoryAvailable;
-		File directory = new File(location + File.separator + provider);
-		if (directory.exists()) {
-			directoryAvailable = true;
-		} else {
-			directoryAvailable = directory.mkdirs();
-		}
-		if (directoryAvailable) {
-			try {
-				LOGGER.info("Updating the {} assets", provider);
-				for (final RetrievalEndpoint endpoint : endpoints) {
-					assetRetryRetrievalService.retrieveAsset(provider, endpoint);
-				}
-				LOGGER.info("Done updating the {} assets", provider);
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(), e);
-			}
-		} else {
-			LOGGER.error("unable to create directory {}", location);
-		}
-	}
+    /**
+     * Method to fetch the assets defined in the proper implementation class. You need to implement
+     * one AssetRetrievalService class per Provider. A provider is a logical group which should
+     * represent the source of the files. Put them into the application.yml If the endpoint delivers
+     * a ZIP file it will be extracted
+     */
+    public void updateAssetsInternal(String provider, List<RetrievalEndpoint> endpoints) {
+        boolean directoryAvailable;
+        File directory = new File(location + File.separator + provider);
+        if (directory.exists()) {
+            directoryAvailable = true;
+        } else {
+            directoryAvailable = directory.mkdirs();
+        }
+        if (directoryAvailable) {
+            try {
+                LOGGER.info("Updating the {} assets", provider);
+                for (final RetrievalEndpoint endpoint : endpoints) {
+                    assetRetryRetrievalService.retrieveAsset(provider, endpoint);
+                }
+                LOGGER.info("Done updating the {} assets", provider);
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        } else {
+            LOGGER.error("unable to create directory {}", location);
+        }
+    }
 
-	public abstract void updateAssets();
+    public abstract void updateAssets();
 
-	@Override
-	public void afterPropertiesSet() {
-		this.updateAssets();
-	}
+    @Override
+    public void afterPropertiesSet() {
+        this.updateAssets();
+    }
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

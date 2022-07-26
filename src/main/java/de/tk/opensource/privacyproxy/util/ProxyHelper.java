@@ -1,102 +1,142 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.util;
 
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultRoutePlanner;
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
+
+import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URL;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
-@Component
 public class ProxyHelper {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
+    public static final int ROUTING_TIMEOUT_MILLISECONDS = 5000;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyHelper.class);
 
-	@Autowired
-	private Proxy proxy;
+    private final String proxyHost;
+    private final Integer proxyPort;
+    private final String nonProxyHosts;
+    private final HttpHost httpProxyHost;
 
-	@Value("${http.nonProxyHosts:''}")
-	private String nonProxyHosts;
+    private Proxy proxy;
+    private DefaultRoutePlanner proxyRoutePlanner;
 
-	public ProxyHelper() {
-	}
+    public ProxyHelper(Proxy proxy, final String proxyHost, final Integer proxyPort, final String nonProxyHosts) {
+        this.proxyHost = proxyHost;
+        this.proxyPort = proxyPort;
+        this.nonProxyHosts = nonProxyHosts;
+        this.proxy = proxy;
+        this.httpProxyHost = (this.proxyHost != null && this.proxyPort != null) ? new HttpHost(this.proxyHost, this.proxyPort) : null;
+    }
 
-	// Package protected constructor for unit tests
-	ProxyHelper(Proxy proxy, String nonProxyHosts) {
-		this.proxy = proxy;
-		this.nonProxyHosts = nonProxyHosts;
-	}
+    private Proxy getProxy() {
+        if (proxy != null) {
+            return proxy;
+        }
 
-	/**
-	 * Evaluates a list of hosts that should be reached directly, bypassing the proxy. This list is
-	 * configured using the system property 'http.nonProxyHosts'. The list of patterns is separated
-	 * by '|'. Any host matching one of these patterns will be reached through a direct connection
-	 * instead of through a proxy.
-	 *
-	 * @param   url
-	 *
-	 * @return  the configured {@link Proxy} instance or {@link Proxy#NO_PROXY} when the hostname is
-	 *          excluded.
-	 */
-	public Proxy selectProxy(URL url) {
+        return (proxyHost == null || proxyPort == null) 
+            ? Proxy.NO_PROXY 
+            : new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+    }
 
-		// Skip evaluation if no proxy is configured at all
-		if (Proxy.NO_PROXY.equals(proxy) || StringUtils.isEmpty(nonProxyHosts)) {
-			return proxy;
-		}
+    public DefaultRoutePlanner getProxyRoutePlanner() {
+        if (proxyRoutePlanner == null) {
+            if (getHttpProxyHost() != null) {
+                proxyRoutePlanner = new PrivacyProxyRoutePlanner(this, getHttpProxyHost());
+            }
+            else {
+                LOGGER.debug("No Proxy configured - Using System (JRE) Default");
+                proxyRoutePlanner = new SystemDefaultRoutePlanner(ProxySelector.getDefault());
+            }
+        }
+        return proxyRoutePlanner;
+    }
 
-		// The list of excluded host patterns is separated by '|'.
-		Stream<String> excluded = Pattern.compile(Pattern.quote("|")).splitAsStream(nonProxyHosts);
+    public HttpHost getHttpProxyHost() {
+        return httpProxyHost;
+    }
 
-		String hostname = url.getHost();
-		boolean isExcluded = excluded.anyMatch(pattern -> matches(hostname, pattern.trim()));
+    /**
+     * Evaluates if a host should be reached directly, bypassing the proxy. The pattern may start or
+     * end with a '*' for wildcards.
+     *
+     * @param hostname
+     * @param pattern
+     * @return true if hostname matches the given pattern.
+     */
+    public static boolean matches(String hostname, String pattern) {
 
-		Proxy selection = isExcluded ? Proxy.NO_PROXY : proxy;
-		LOGGER.debug("Using {} for {} ({})", selection, hostname, nonProxyHosts);
-		return selection;
-	}
+        if (pattern.isEmpty()) {
+            return false;
+        }
 
-	/**
-	 * Evaluates if a host should be reached directly, bypassing the proxy. The pattern may start or
-	 * end with a '*' for wildcards.
-	 *
-	 * @param   hostname
-	 * @param   pattern
-	 *
-	 * @return  true if hostname matches the given pattern.
-	 */
-	public static boolean matches(String hostname, String pattern) {
+        if (pattern.equals("*")) {
+            return true;
+        }
 
-		if (pattern.isEmpty()) {
-			return false;
-		}
+        if (pattern.startsWith("*")) {
 
-		if (pattern.equals("*")) {
-			return true;
-		}
+            if (pattern.endsWith("*") && pattern.length() > 1) {
+                return hostname.contains(pattern.substring(1, pattern.length() - 1));
+            }
 
-		if (pattern.startsWith("*")) {
+            return hostname.endsWith(pattern.substring(1));
+        }
 
-			if (pattern.endsWith("*") && pattern.length() > 1) {
-				return hostname.contains(pattern.substring(1, pattern.length() - 1));
-			}
+        if (pattern.endsWith("*")) {
+            return hostname.startsWith(pattern.substring(0, pattern.length() - 1));
+        }
 
-			return hostname.endsWith(pattern.substring(1));
-		}
+        return pattern.equals(hostname);
+    }
 
-		if (pattern.endsWith("*")) {
-			return hostname.startsWith(pattern.substring(0, pattern.length() - 1));
-		}
+    /**
+     * Evaluates a list of hosts that should be reached directly, bypassing the proxy. This list is
+     * configured using the system property 'http.nonProxyHosts'. The list of patterns is separated
+     * by '|'. Any host matching one of these patterns will be reached through a direct connection
+     * instead of through a proxy.
+     *
+     * @param url
+     * @return the configured {@link Proxy} instance or {@link Proxy#NO_PROXY} when the hostname is
+     * excluded.
+     */
+    public Proxy selectProxy(URL url) {
 
-		return pattern.equals(hostname);
-	}
+        // Skip evaluation if no proxy is configured at all
+        if (Proxy.NO_PROXY.equals(getProxy()) || !StringUtils.hasText(nonProxyHosts)) {
+            return getProxy();
+        }
+
+        // The list of excluded host patterns is separated by '|'.
+        Stream<String> excluded = Pattern.compile(Pattern.quote("|")).splitAsStream(nonProxyHosts);
+
+        String hostname = url.getHost();
+        boolean isExcluded = excluded.anyMatch(pattern -> matches(hostname, pattern.trim()));
+
+        Proxy selection = isExcluded ? Proxy.NO_PROXY : getProxy();
+        LOGGER.debug("Using {} for {} ({})", selection, hostname, nonProxyHosts);
+        return selection;
+    }
+
+    public CloseableHttpClient getCloseableHttpClient() {
+        final RequestConfig requestConfig =
+                RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
+                        .setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
+                                ROUTING_TIMEOUT_MILLISECONDS
+                        )
+                        .build();
+        return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(
+                        getProxyRoutePlanner()
+                )
+                .build();
+    }
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/

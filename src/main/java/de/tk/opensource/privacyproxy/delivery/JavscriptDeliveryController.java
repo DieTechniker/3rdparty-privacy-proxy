@@ -1,5 +1,3 @@
-/*--- (C) 1999-2019 Techniker Krankenkasse ---*/
-
 package de.tk.opensource.privacyproxy.delivery;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -14,24 +12,22 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class JavscriptDeliveryController extends AssetDeliveryController {
 
-	/**
-	 * Sets up a cachegroup as well as the URL mapping under which this content should be
-	 * accessible.
-	 */
-	@Cacheable(
-		cacheNames = "js",
-		key = "#provider + #script"
-	)
-	@GetMapping(
-		value = "/{provider:[a-zA-Z\\-]+$}/{script:[a-zA-Z0-9\\.\\-\\_]+\\.js$}",
-		produces = "application/javascript"
-	)
-	public ResponseEntity getScript(
-		@PathVariable("provider") String provider,
-		@PathVariable("script") String script
-	) {
-		return super.getAssetInternal(provider, script);
-	}
+    /**
+     * Sets up a cachegroup as well as the URL mapping under which this content should be
+     * accessible.
+     */
+    @Cacheable(
+            cacheNames = "js",
+            key = "#provider + #script"
+    )
+    @GetMapping(
+            value = "/{provider:[a-zA-Z\\-]+$}/{script:[a-zA-Z0-9\\.\\-\\_]+\\.js$}",
+            produces = "application/javascript"
+    )
+    public ResponseEntity getScript(
+            @PathVariable("provider") String provider,
+            @PathVariable("script") String script
+    ) {
+        return super.getAssetInternal(provider, script);
+    }
 }
-
-/*--- Formatiert nach TK Code Konventionen vom 05.03.2002 ---*/
