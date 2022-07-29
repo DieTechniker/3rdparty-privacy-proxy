@@ -11,14 +11,14 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-public class HttpProxyConfig {
-    @Value("${http.proxyHost:#{null}}")
+public class HttpsProxyConfig {
+    @Value("${https.proxyHost:#{null}}")
     private String proxyHost;
 
-    @Value("${http.proxyPort:#{null}}")
+    @Value("${https.proxyPort:#{null}}")
     private Integer proxyPort;
 
-    @Value("${http.nonProxyHosts:#{null}}")
+    @Value("${https.nonProxyHosts:#{null}}")
     private String nonProxyHosts;
 
     @Bean
