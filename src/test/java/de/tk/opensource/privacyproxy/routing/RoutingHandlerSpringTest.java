@@ -22,7 +22,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -160,6 +164,6 @@ class RoutingHandlerSpringTest {
                 );
 
         assertThat(responseEntity, notNullValue());
-        assertThat(responseEntity.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
+        assertThat(responseEntity.getStatusCode(), equalTo(HttpStatus.BAD_REQUEST));
     }
 }
