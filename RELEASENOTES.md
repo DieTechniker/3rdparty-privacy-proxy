@@ -1,5 +1,6 @@
 # Release notes
 ## 1.1.0
+* Using env https.\*proxy\* only for proxy setup
 * Deprecated Code deleted
 * in some cases switched to semantic return status codes, for example a bad request
 ## 1.0.15
