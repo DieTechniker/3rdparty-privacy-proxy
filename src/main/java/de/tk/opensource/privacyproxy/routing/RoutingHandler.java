@@ -1,18 +1,10 @@
 package de.tk.opensource.privacyproxy.routing;
 
 import de.tk.opensource.privacyproxy.config.CookieNameMatchType;
-import de.tk.opensource.privacyproxy.config.ProviderRequestMethod;
 import de.tk.opensource.privacyproxy.config.UrlPattern;
 import de.tk.opensource.privacyproxy.util.ProxyHelper;
 import de.tk.opensource.privacyproxy.util.RequestUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +12,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.MultiValueMapAdapter;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -32,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This component will allow you to take back control over information being sent to 3rd Party
@@ -75,7 +65,7 @@ public abstract class RoutingHandler {
             final HttpMethod method
     ) {
         if (method == HttpMethod.POST && body == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         final String queryString = filterQueryString(queryStrings);
@@ -119,127 +109,12 @@ public abstract class RoutingHandler {
         }
     }
 
-    /**
-     * @deprecated Use {@linkplain #handleGenericRequestInternal(String, Map, HttpServletRequest,
-     * String, HttpMethod)} instead. Basic implementation for requests, which are
-     * routed through the privacy-proxy. It can be configured by overriding certain
-     * methods. Every routing endpoint must have a dedicated specific handler.
-     */
-    @Deprecated
-    public ResponseEntity<Object> handlePostInternal(
-            HttpServletRequest request,
-            Map<String, String> data,
-            String trackingEndpoint
-    ) {
-        try (
-                final CloseableHttpClient httpClient =
-                        proxyHelper.getCloseableHttpClient()
-        ) {
-            HttpRequestBase httpRequest;
-
-            final String queryString = filterQueryString(data);
-            final URI url =
-                    new URI(trackingEndpoint + (!"".equals(queryString) ? "?" + queryString : ""));
-
-            if (getRequestMethod() == ProviderRequestMethod.POST) {
-                httpRequest = new HttpPost(url);
-            } else {
-                httpRequest = new HttpGet(url);
-            }
-
-            addLegacyWhitelistedCookiesToRequest(httpRequest, request);
-
-            for (final String headerName : getWhitelistedRequestHeaders()) {
-                final String headerValue = request.getHeader(headerName);
-                if (headerValue != null) {
-                    httpRequest.addHeader(headerName, headerValue);
-                }
-            }
-
-            for (
-                    final Map.Entry<String, String> header
-                    : getAdditionalRequestHeaders(request).entrySet()
-            ) {
-                httpRequest.addHeader(header.getKey(), header.getValue());
-            }
-
-            logger.debug("Calling {}", httpRequest.getURI());
-
-            final HttpResponse response = httpClient.execute(httpRequest);
-            final HttpHeaders responseHeaders = getHttpHeaders(response);
-
-            logger.debug(
-                    "Route request to 3rd party. Url={}, bytes sent={}, bytes received={}",
-                    trackingEndpoint,
-                    queryString.getBytes().length,
-                    response.getEntity() != null ? response.getEntity().getContentLength() : 0
-            );
-
-            MediaType mediaType = getResponseMediaType(response);
-
-            final int statusCode = response.getStatusLine().getStatusCode();
-            logger.debug(
-                    "Response to caller: Content Type {} | Status Code {}",
-                    mediaType.toString(),
-                    statusCode
-            );
-
-            byte[] responseBody = null;
-            if (response.getEntity() != null) {
-                responseBody = IOUtils.toByteArray(response.getEntity().getContent());
-            }
-            logger.debug("Body:\n{}", Arrays.toString(responseBody));
-
-            return ResponseEntity.status(statusCode).headers(responseHeaders).contentType(mediaType)
-                    .body(responseBody);
-
-        } catch (Exception e) {
-            logger.warn(
-                    "Failed to proxy request. Endpoint: " + trackingEndpoint + ", Error: "
-                            + e.getMessage(),
-                    e
-            );
-            return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
-        }
-    }
-
-    @Deprecated
-    private HttpHeaders getHttpHeaders(HttpResponse response) {
-
-        //J-
-        final Map<String, List<String>> headers = Arrays
-                .stream(response.getAllHeaders())
-                .collect(Collectors.toMap(
-                                NameValuePair::getName, e -> Collections.singletonList(e.getValue())
-                        )
-                );
-        //J+
-        final MultiValueMapAdapter<String, String> springHeaders =
-                new MultiValueMapAdapter<>(headers);
-
-        return whitelistResponseHeaders(new HttpHeaders(springHeaders));
-    }
-
-    @Deprecated
-    private MediaType getResponseMediaType(HttpResponse response) {
-        MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
-        if (response.getEntity() != null) {
-            Header contentType = response.getEntity().getContentType();
-            if (contentType != null) {
-                mediaType = MediaType.valueOf(contentType.getValue());
-            }
-        }
-        return mediaType;
-    }
-
     protected HttpHeaders whitelistResponseHeaders(final HttpHeaders sourceHeaders) {
         final HttpHeaders whitelistedResponseHeaders = new HttpHeaders();
         whitelistedResponseHeaders.add(HttpHeaders.CACHE_CONTROL, "no-cache");
         if (sourceHeaders.getContentType() != null) {
-            whitelistedResponseHeaders.add(
-                    HttpHeaders.CONTENT_TYPE,
-                    sourceHeaders.getContentType().toString()
-            );
+            whitelistedResponseHeaders.add(HttpHeaders.CONTENT_TYPE,
+                    sourceHeaders.getContentType().toString());
         }
 
         for (final String headerName : getWhitelistedResponseHeaders()) {
@@ -300,24 +175,6 @@ public abstract class RoutingHandler {
         if (getWhitelistedCookieNames().length > 0) {
             headers.add("Cookie", getWhitelistedCookies(request).toString());
         }
-    }
-
-    /**
-     * @param connection
-     * @param request
-     * @return
-     * @deprecated Use {@linkplain #getWhitelistedCookies(HttpServletRequest)} instead. adds
-     * selected cookies to the request
-     */
-    @Deprecated
-    private HttpRequestBase addLegacyWhitelistedCookiesToRequest(
-            HttpRequestBase connection,
-            HttpServletRequest request
-    ) {
-        if (getWhitelistedCookieNames().length > 0) {
-            connection.addHeader("Cookie", getWhitelistedCookies(request).toString());
-        }
-        return connection;
     }
 
     private StringBuilder getWhitelistedCookies(final HttpServletRequest request) {
@@ -406,16 +263,6 @@ public abstract class RoutingHandler {
 
     protected String[] getWhitelistedRequestHeaders() {
         return DEFAULT_RETURN_VALUE;
-    }
-
-    /**
-     * @return
-     * @deprecated because the {@linkplain #handleGenericRequestInternal(String, Map,
-     * HttpServletRequest, String, HttpMethod)} can handle both method types.
-     */
-    @Deprecated
-    protected ProviderRequestMethod getRequestMethod() {
-        return ProviderRequestMethod.POST;
     }
 
     /**

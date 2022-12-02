@@ -1,6 +1,8 @@
 # Release notes
 ## 1.1.0
 * Using env https.\*proxy\* only for proxy setup
+* Deprecated Code deleted
+* in some cases switched to semantic return status codes, for example a bad request
 ## 1.0.15
 * Upgrade to Spring-Boot 2.7.1
 * Modified GitHub Action to build maven snapshots on published features 
