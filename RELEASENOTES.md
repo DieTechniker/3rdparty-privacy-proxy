@@ -1,5 +1,7 @@
 # Release notes
 ## 1.1.0
+* Updated to Spring-Boot 2.7.6
+* Dependencies maintained
 * Using env https.\*proxy\* only for proxy setup
 * Deprecated Code deleted
 * in some cases switched to semantic return status codes, for example a bad request
