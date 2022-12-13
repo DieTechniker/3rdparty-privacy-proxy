@@ -91,7 +91,7 @@ public abstract class RoutingHandler {
                             )
                             .body(responseEntity.getBody());
 
-            log(targetEndpoint, queryString.getBytes().length, customResponseEntity, body);
+            log(targetEndpoint, request.getContentLength(), customResponseEntity, body);
 
             return customResponseEntity;
         } catch (HttpStatusCodeException e) {
