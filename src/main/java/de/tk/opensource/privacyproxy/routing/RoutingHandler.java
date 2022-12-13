@@ -129,7 +129,7 @@ public abstract class RoutingHandler {
 
     /**
      * Designed to be overwritten to exclude all {@linkplain #getBlacklistedQueryParams()} from the request body. This
-     * default method can only handle <string, string> maps.
+     * default method can only handle string maps.
      *
      * @param body request body
      * @param <T>  request body type
