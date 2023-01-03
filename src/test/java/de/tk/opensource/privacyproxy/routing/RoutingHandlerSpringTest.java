@@ -146,24 +146,4 @@ class RoutingHandlerSpringTest {
                 equalTo(responseBodyString)
         );
     }
-
-    @Test
-    void testHandleGenericRequestInternalForbidden() throws URISyntaxException, IOException {
-        final Map<String, String> queryParams = new HashMap<>();
-        queryParams.put("id", "1234");
-        queryParams.put("WTX", "XYZ");
-
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        final ResponseEntity<Resource> responseEntity =
-                routingHandler.handleGenericRequestInternal(
-                        "https://localhost/1337/wt",
-                        queryParams,
-                        request,
-                        null,
-                        HttpMethod.POST
-                );
-
-        assertThat(responseEntity, notNullValue());
-        assertThat(responseEntity.getStatusCode(), equalTo(HttpStatus.BAD_REQUEST));
-    }
 }

@@ -8,11 +8,16 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RoutingHandlerTest {
@@ -23,7 +28,8 @@ class RoutingHandlerTest {
         parameter.put("one", "parameter1");
         parameter.put("two", "some, special chars?");
 
-        RoutingHandler handler = new RoutingHandler() {};
+        RoutingHandler handler = new RoutingHandler() {
+        };
 
         assertEquals(
                 "one=parameter1&two=some%2C+special+chars%3F",
@@ -189,5 +195,30 @@ class RoutingHandlerTest {
         assertThat(headers.entrySet(), hasSize(1));
         assertThat(headers, hasKey("Cookie"));
         assertThat(headers.get("Cookie"), contains("wt_rla=1337; path=/"));
+    }
+
+    @Test
+    void testFilterRequestBody() {
+        final Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("restricted", "hidden value");
+        requestBody.put("param", "some value");
+
+        RoutingHandler handler =
+                new RoutingHandler() {
+                    @Override
+                    protected String[] getBlacklistedQueryParams() {
+                        return new String[]{"restricted"};
+                    }
+                };
+
+        handler.filterRequestBody(requestBody);
+        assertThat(requestBody.size(), is(1));
+        assertThat(requestBody, hasKey("param"));
+    }
+
+    @Test()
+    void testFilterRequestBodyNoException() {
+        assertDoesNotThrow(() -> new RoutingHandler() {
+        }.filterRequestBody(null));
     }
 }
