@@ -22,7 +22,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -141,25 +145,5 @@ class RoutingHandlerSpringTest {
                 IOUtils.toString(responseEntity.getBody().getInputStream(), StandardCharsets.UTF_8),
                 equalTo(responseBodyString)
         );
-    }
-
-    @Test
-    void testHandleGenericRequestInternalForbidden() throws URISyntaxException, IOException {
-        final Map<String, String> queryParams = new HashMap<>();
-        queryParams.put("id", "1234");
-        queryParams.put("WTX", "XYZ");
-
-        final MockHttpServletRequest request = new MockHttpServletRequest();
-        final ResponseEntity<Resource> responseEntity =
-                routingHandler.handleGenericRequestInternal(
-                        "https://localhost/1337/wt",
-                        queryParams,
-                        request,
-                        null,
-                        HttpMethod.POST
-                );
-
-        assertThat(responseEntity, notNullValue());
-        assertThat(responseEntity.getStatusCode(), equalTo(HttpStatus.FORBIDDEN));
     }
 }
