@@ -1,6 +1,6 @@
 package de.tk.opensource.privacyproxy.util;
 
-import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
+import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;

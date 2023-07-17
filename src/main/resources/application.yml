@@ -4,7 +4,8 @@ spring:
 server:
   port: 2907
 logging:
-  file: log/3rdparty-privacy-proxy.log
+  file:
+    name: log/3rdparty-privacy-proxy.log
   level:
     ROOT: INFO
     de.tk.opensource.privacyproxy: INFO

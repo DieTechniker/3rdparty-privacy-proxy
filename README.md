@@ -19,7 +19,7 @@ To build and run this software, you require
 * A current version of [Maven](https://maven.apache.org/)
 * A current version of the [OpenJDK](https://developers.redhat.com/products/openjdk/download/)
 
-This project is configured against Java 8. So for the time being you should go with that.
+This project is configured against Java 17. So for the time being you should go with that.
 
 ### Installing
 
