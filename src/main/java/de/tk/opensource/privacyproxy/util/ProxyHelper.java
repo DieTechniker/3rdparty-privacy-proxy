@@ -1,11 +1,12 @@
 package de.tk.opensource.privacyproxy.util;
 
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.DefaultRoutePlanner;
-import org.apache.http.impl.conn.SystemDefaultRoutePlanner;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.routing.DefaultRoutePlanner;
+import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -129,9 +130,9 @@ public class ProxyHelper {
 
     public CloseableHttpClient getCloseableHttpClient() {
         final RequestConfig requestConfig =
-                RequestConfig.custom().setConnectTimeout(ROUTING_TIMEOUT_MILLISECONDS)
-                        .setConnectionRequestTimeout(ROUTING_TIMEOUT_MILLISECONDS).setSocketTimeout(
-                                ROUTING_TIMEOUT_MILLISECONDS
+                RequestConfig.custom().setConnectTimeout(Timeout.ofMilliseconds(ROUTING_TIMEOUT_MILLISECONDS))
+                        .setConnectionRequestTimeout(Timeout.ofMilliseconds(ROUTING_TIMEOUT_MILLISECONDS)).setResponseTimeout(
+                                Timeout.ofMilliseconds(ROUTING_TIMEOUT_MILLISECONDS)
                         )
                         .build();
         return HttpClients.custom().setDefaultRequestConfig(requestConfig).setRoutePlanner(

@@ -1,4 +1,5 @@
 language: java
+jdk: openjdk17
 
 script:
   # the following command line builds the project, runs the tests with coverage
