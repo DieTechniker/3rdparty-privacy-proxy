@@ -1,4 +1,7 @@
 # Release notes
+## 1.2.0
+* Upgrade to Spring-Boot 3.0.8
+* Upgrade to Java 17
 ## 1.1.0
 * Updated to Spring-Boot 2.7.6
 * Dependencies maintained

@@ -12,7 +12,6 @@ import org.springframework.retry.RetryCallback;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.RetryListener;
 import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.retry.listener.RetryListenerSupport;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Collections;
@@ -35,7 +34,7 @@ public class ApplicationConfig {
         Logger log = LoggerFactory.getLogger(getClass());
 
         return Collections.singletonList(
-                new RetryListenerSupport() {
+                new RetryListener() {
                     @Override
                     public <T, E extends Throwable> void onError(
                             RetryContext context,
