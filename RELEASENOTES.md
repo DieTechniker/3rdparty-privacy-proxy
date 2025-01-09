@@ -1,4 +1,6 @@
 # Release notes
+## 1.2.1
+* Stopped logging http error stacktraces to warn.
 ## 1.2.0
 * Upgrade to Spring-Boot 3.0.8
 * Upgrade to Java 17
