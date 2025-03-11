@@ -3,8 +3,8 @@ package de.tk.opensource.privacyproxy.util;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.routing.DefaultRoutePlanner;
 import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner;
+import org.apache.hc.client5.http.routing.HttpRoutePlanner;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class ProxyHelper {
     private final HttpHost httpProxyHost;
 
     private Proxy proxy;
-    private DefaultRoutePlanner proxyRoutePlanner;
+    private HttpRoutePlanner proxyRoutePlanner;
 
     public ProxyHelper(Proxy proxy, final String proxyHost, final Integer proxyPort, final String nonProxyHosts) {
         this.proxyHost = proxyHost;
@@ -49,7 +49,7 @@ public class ProxyHelper {
             : new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
     }
 
-    public DefaultRoutePlanner getProxyRoutePlanner() {
+    public HttpRoutePlanner getProxyRoutePlanner() {
         if (proxyRoutePlanner == null) {
             if (getHttpProxyHost() != null) {
                 proxyRoutePlanner = new PrivacyProxyRoutePlanner(this, getHttpProxyHost());
