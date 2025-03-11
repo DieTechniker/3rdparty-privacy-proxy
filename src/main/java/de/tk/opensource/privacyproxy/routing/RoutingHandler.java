@@ -97,12 +97,19 @@ public abstract class RoutingHandler {
         } catch (HttpStatusCodeException e) {
             logger.warn(
                     String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, e.getMessage())
+                            + ", with status code: " + e.getStatusCode()
+            );
+            logger.debug(
+                    String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, e.getMessage())
                             + ", with status code: " + e.getStatusCode(),
                     e
             );
             return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).build();
         } catch (IOException ee) {
             logger.warn(
+                    String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, ee.getMessage())
+            );
+            logger.debug(
                     String.format(EXCEPTION_PROXY_MESSAGE, targetEndpoint, ee.getMessage()),
                     ee
             );
