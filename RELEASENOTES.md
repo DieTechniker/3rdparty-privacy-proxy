@@ -1,4 +1,6 @@
 # Release notes
+## 1.2.2
+* Fixed nonProxyHosts handling in PrivacyProxyRoutePlanner
 ## 1.2.1
 * Stopped logging http error stacktraces to warn.
 ## 1.2.0
